@@ -6,9 +6,15 @@ This document serves as a reference guide for running Specify commands inside th
 
 ## 1. Initial One-Time Repository Setup
 
-Before starting any feature, initialize the repository-native Markdown memory:
-- **Command**: `/speckit-memory-md-init`
-- **Purpose**: Creates the durable memory index and folders (`docs/memory/INDEX.md`, etc.) for capturing decisions, architectural constraints, and historical bug patterns.
+Before starting any feature, perform the following one-time setup steps in the repository:
+
+1. **Establish Core Principles (Constitution)**:
+   - **Command**: `/speckit-constitution`
+   - **Purpose**: Creates or updates the core coding principles, tech stack constraints, quality gates, and governance policies in [.specify/memory/constitution.md](file:///home/dbatz/projects/Backend-Engineering-Excercise/.specify/memory/constitution.md) and propagates updates to templates.
+
+2. **Initialize Markdown Memory**:
+   - **Command**: `/speckit-memory-md-init`
+   - **Purpose**: Creates the durable memory index and folders (`docs/memory/INDEX.md`, etc.) for capturing decisions, architectural constraints, and historical bug patterns.
 
 ---
 
