@@ -1,0 +1,45 @@
+installed:
+- agent-context
+- checkpoint
+- doctor
+- memory-md
+settings:
+  auto_execute_hooks: true
+hooks:
+  after_specify:
+  - extension: agent-context
+    command: speckit.agent-context.update
+    enabled: true
+    optional: true
+    priority: 10
+    prompt: Execute speckit.agent-context.update?
+    description: Refresh agent context after specification
+    condition: null
+  after_plan:
+  - extension: agent-context
+    command: speckit.agent-context.update
+    enabled: true
+    optional: true
+    priority: 10
+    prompt: Execute speckit.agent-context.update?
+    description: Refresh agent context after planning
+    condition: null
+  before_plan:
+  - extension: memory-md
+    command: speckit.memory-md.plan-with-memory
+    enabled: true
+    optional: true
+    priority: 10
+    prompt: Would you like to synthesize project memory before planning?
+    description: ''
+    condition: null
+  after_implement:
+  - extension: memory-md
+    command: speckit.memory-md.capture-from-diff
+    enabled: true
+    optional: true
+    priority: 10
+    prompt: Would you like to capture durable lessons from this implementation to
+      project memory?
+    description: ''
+    condition: null
