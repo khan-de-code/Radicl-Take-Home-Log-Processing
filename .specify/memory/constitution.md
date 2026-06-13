@@ -1,12 +1,11 @@
 <!--
 ### Sync Impact Report
-- Version change: 1.0.0 -> 1.1.0
+- Version change: 1.1.0 -> 1.2.0
 - Modified principles:
-  - I. Code Quality & Strict Type Safety -> Update to Python Pydantic models / Dataclasses, Ruff / MyPy type checking
-  - III. Comprehensive Testing & Golden-File Validation -> Update to Python pytest framework
-  - V. Resource Bounding & Performance Efficiency -> Update to Python memory-efficient generators and timeouts
+  - Technical Stack & Implementation Constraints -> Add uv (v0.11.15+) as the mandatory environment/project manager
+  - Development Workflow & Quality Gates -> Change test quality gate command to 'uv run pytest'
 - Added sections: none
-- Technical Stack: Go 1.22+ -> Python 3.12+
+- Technical Stack: Python 3.12+, uv
 - Templates requiring updates: none
 - Follow-up TODOs: none
 -->
@@ -32,15 +31,16 @@ The service must meet strict performance requirements to prevent resource exhaus
 
 ## Technical Stack & Implementation Constraints
 - **Language**: Python (v3.12+).
-- **Dependencies**: Minimize external libraries. Standard library modules (`socket`, `json`, `argparse`, `logging`) must be preferred. If third-party packages are needed (e.g., `pydantic` for validation, `pytest` for testing), they must be explicitly justified and vetted.
+- **Environment & Project Manager**: `uv` (v0.11.15+). All dependencies and tool execution must be managed through `uv`.
+- **Dependencies**: Minimize external libraries. Standard library modules (`socket`, `json`, `argparse`, `logging`) must be preferred. If third-party packages are needed (e.g., `pydantic` for validation, `pytest` for testing), they must be explicitly justified, vetted, and added via `uv add`.
 - **Safety**: No unhandled exception leaks or thread/coroutine leaks. Contexts/timeouts must be propagated to all network operations for graceful cancellation.
 
 ## Development Workflow & Quality Gates
 - **Git Flow**: All feature implementations must be done on dedicated branches. Commits must follow the Conventional Commits specification (e.g., `feat:`, `fix:`, `test:`).
-- **Quality Gates**: No code can be committed without all tests passing (`pytest`) and the linter/type checker running successfully with zero errors.
+- **Quality Gates**: No code can be committed without all tests passing (`uv run pytest`) and the linter/type checker running successfully with zero errors.
 - **AI Usage**: Any AI-assisted code generation or design assistance must be documented in `AI_USAGE.md` as required by the coding exercise.
 
 ## Governance
 This Constitution holds authority over all engineering and design decisions in this repository. Amendments to these principles require updating the version following semantic versioning principles and documenting the change in the Sync Impact Report at the top of this document. All code reviews and quality checks must enforce compliance with these principles.
 
-**Version**: 1.1.0 | **Ratified**: 2026-06-13 | **Last Amended**: 2026-06-13
+**Version**: 1.2.0 | **Ratified**: 2026-06-13 | **Last Amended**: 2026-06-13
