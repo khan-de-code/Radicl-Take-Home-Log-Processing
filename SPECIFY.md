@@ -61,6 +61,9 @@ When developing a new feature, follow this chronological order of commands:
 10. **Analyze Diff & Capture Lessons**:
     - **Command**: `/speckit-memory-md-capture-from-diff` (or triggered automatically via hook `after_implement`)
     - **Purpose**: Scans code changes and guides you to record durable lessons, patterns, or decisions back into the repository memory index.
+11. **Propose Lessons from Completed Work**:
+    - **Command**: `/speckit-memory-md-capture`
+    - **Purpose**: Proposes human-approved durable lessons and updates the memory index from completed work.
 
 ---
 
@@ -74,6 +77,10 @@ Run these utility commands at any time to verify system health:
   - `/speckit-memory-md-audit`: Evaluates long-term memory quality, index alignment, and synthesis hygiene.
 - **Node/Token Efficiency Check**:
   - `/speckit-memory-md-token-report`: Compares estimated token costs between full-memory scanning vs. optimized synthesis.
+- **Update Agent Context**:
+  - `/speckit-agent-context-update`: Refreshes the managed Spec Kit section in the coding agent context/instruction files.
+- **Log Audit Findings**:
+  - `/speckit-memory-md-log-finding`: Turns a high-signal audit finding into a tracker-ready follow-up issue for external systems (GitHub, GitLab, Jira, etc.).
 
 ---
 
