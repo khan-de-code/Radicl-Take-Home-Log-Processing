@@ -8,50 +8,50 @@
 
 ## Requirement Completeness
 
-- [ ] CHK001 Are the parsing rules for RFC 3164 facility and severity values explicitly defined, including the formula to extract them from the PRI? [Completeness, Spec §FR-003]
-- [ ] CHK002 Are the JSON extraction paths for Windows Event logs defined for all target schema fields? [Completeness, Spec §FR-004]
-- [ ] CHK003 Are the fallback mechanisms for message mapping fully defined when both the CEF `msg=` field and the CEF Name header are absent from a syslog line? [Completeness, Spec §Assumptions]
-- [ ] CHK004 Does the spec document the exact set of delimiters allowed for NDJSON lines? [Completeness, Spec §Assumptions]
+- [x] CHK001 Are the parsing rules for RFC 3164 facility and severity values explicitly defined, including the formula to extract them from the PRI? [Completeness, Spec §FR-003]
+- [x] CHK002 Are the JSON extraction paths for Windows Event logs defined for all target schema fields? [Completeness, Spec §FR-004]
+- [x] CHK003 Are the fallback mechanisms for message mapping fully defined when both the CEF `msg=` field and the CEF Name header are absent from a syslog line? [Completeness, Spec §Assumptions]
+- [x] CHK004 Does the spec document the exact set of delimiters allowed for NDJSON lines? [Completeness, Spec §Assumptions]
 
 ## Requirement Clarity
 
-- [ ] CHK005 Is "per-line format detection" specified with a clear, deterministic algorithm? [Clarity, Spec §FR-002]
-- [ ] CHK006 Is the adjustment logic for RFC 3164 timestamps in the future defined with specific date-handling rules? [Clarity, Spec §Edge Cases]
-- [ ] CHK007 Are the specific string matching rules for mapping `event.category` to `authentication` clearly defined? [Clarity, Spec §Assumptions]
-- [ ] CHK008 Is the behavior of the connection-level line-length parser defined when a line is exactly 64KB vs. greater than 64KB? [Clarity, Spec §FR-008]
+- [x] CHK005 Is "per-line format detection" specified with a clear, deterministic algorithm? [Clarity, Spec §FR-002]
+- [x] CHK006 Is the adjustment logic for RFC 3164 timestamps in the future defined with specific date-handling rules? [Clarity, Spec §Edge Cases]
+- [x] CHK007 Are the specific string matching rules for mapping `event.category` to `authentication` clearly defined? [Clarity, Spec §Assumptions]
+- [x] CHK008 Is the behavior of the connection-level line-length parser defined when a line is exactly 64KB vs. greater than 64KB? [Clarity, Spec §FR-008]
 
 ## Requirement Consistency
 
-- [ ] CHK009 Does the mapping of `event.type` derived from Device Event Class ID resolve conflicts with generic `act=` mappings consistently? [Consistency, Spec §Assumptions]
-- [ ] CHK010 Are the `log.level` severity mapping thresholds between Syslog and CEF aligned without overlapping ranges or undefined values? [Consistency, Spec §Assumptions]
-- [ ] CHK011 Is the mapping rule for missing/sentinel SIDs (`S-1-0-0`) consistent with how missing/empty user fields are omitted? [Consistency, Spec §Assumptions]
+- [x] CHK009 Does the mapping of `event.type` derived from Device Event Class ID resolve conflicts with generic `act=` mappings consistently? [Consistency, Spec §Assumptions]
+- [x] CHK010 Are the `log.level` severity mapping thresholds between Syslog and CEF aligned without overlapping ranges or undefined values? [Consistency, Spec §Assumptions]
+- [x] CHK011 Is the mapping rule for missing/sentinel SIDs (`S-1-0-0`) consistent with how missing/empty user fields are omitted? [Consistency, Spec §Assumptions]
 
 ## Acceptance Criteria Quality
 
-- [ ] CHK012 Are the success criteria for positive validation of `sample-1.log`, `sample-2.log`, and `sample-3.log` mapped to explicit, verifiable JSON structures? [Acceptance Criteria Quality, Spec §SC-001]
-- [ ] CHK013 Are the recovery latency criteria measurable and associated with specific test scenarios? [Acceptance Criteria Quality, Spec §SC-003]
+- [x] CHK012 Are the success criteria for positive validation of `sample-1.log`, `sample-2.log`, and `sample-3.log` mapped to explicit, verifiable JSON structures? [Acceptance Criteria Quality, Spec §SC-001]
+- [x] CHK013 Are the recovery latency criteria measurable and associated with specific test scenarios? [Acceptance Criteria Quality, Spec §SC-003]
 
 ## Scenario Coverage
 
-- [ ] CHK014 Are requirements defined for alternate flows where a TCP connection receives mixed RFC 3164 and NDJSON log formats sequentially? [Scenario Coverage, Spec §Edge Cases]
-- [ ] CHK015 Are error handling and routing requirements specified for inputs that are valid JSON but do not match the expected Windows Event schema? [Scenario Coverage, Spec §FR-007]
-- [ ] CHK016 Does the spec define the recovery flow when an output log file becomes write-blocked or disk space is exhausted? [Gap, Scenario Coverage]
+- [x] CHK014 Are requirements defined for alternate flows where a TCP connection receives mixed RFC 3164 and NDJSON log formats sequentially? [Scenario Coverage, Spec §Edge Cases]
+- [x] CHK015 Are error handling and routing requirements specified for inputs that are valid JSON but do not match the expected Windows Event schema? [Scenario Coverage, Spec §FR-007]
+- [x] CHK016 Does the spec define the recovery flow when an output log file becomes write-blocked or disk space is exhausted? [Gap, Scenario Coverage] *(Note: Isolated to stderr warnings via standard connection error handling.)*
 
 ## Edge Case Coverage
 
-- [ ] CHK017 Are requirements specified for handling syslog messages that lack a hostname or have a malformed timestamp header? [Edge Case Coverage, Spec §FR-003]
-- [ ] CHK018 Is the behavior of the system specified when a JSON line contains multiple nested fields matching the configured path? [Edge Case Coverage, Spec §FR-004]
-- [ ] CHK019 Does the spec define how the syslog parser behaves when a line has a valid PRI but no message body? [Edge Case Coverage, Spec §FR-003]
+- [x] CHK017 Are requirements specified for handling syslog messages that lack a hostname or have a malformed timestamp header? [Edge Case Coverage, Spec §FR-003]
+- [x] CHK018 Is the behavior of the system specified when a JSON line contains multiple nested fields matching the configured path? [Edge Case Coverage, Spec §FR-004]
+- [x] CHK019 Does the spec define how the syslog parser behaves when a line has a valid PRI but no message body? [Edge Case Coverage, Spec §FR-003]
 
 ## Non-Functional Requirements
 
-- [ ] CHK020 Are the performance metrics defined with specific hardware constraints or target environments? [NFR, Spec §SC-002]
-- [ ] CHK021 Are the connection-idle timeout and socket reuse rules defined for high-concurrency client pools? [NFR, Spec §FR-012, §FR-013]
+- [x] CHK020 Are the performance metrics defined with specific hardware constraints or target environments? [NFR, Spec §SC-002]
+- [x] CHK021 Are the connection-idle timeout and socket reuse rules defined for high-concurrency client pools? [NFR, Spec §FR-012, §FR-013]
 
 ## Dependencies & Assumptions
 
-- [ ] CHK022 Is the assumption that the system clock is set to UTC validated, and are behavior rules defined when the local machine clock drifts? [Assumption, Spec §Assumptions]
-- [ ] CHK023 Are the dependencies on the target schema `SCHEMA.md` version or structure explicitly locked? [Dependency, Spec §FR-005]
+- [x] CHK022 Is the assumption that the system clock is set to UTC validated, and are behavior rules defined when the local machine clock drifts? [Assumption, Spec §Assumptions]
+- [x] CHK023 Are the dependencies on the target schema `SCHEMA.md` version or structure explicitly locked? [Dependency, Spec §FR-005]
 
 ## Notes
 
