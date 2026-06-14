@@ -31,17 +31,17 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "pydantic", specifier = ">=2.7.0" },
-    { name = "rich-click", specifier = ">=1.7.0" },
+    { name = "pydantic", specifier = ">=2.13.4" },
+    { name = "rich-click", specifier = ">=1.9.8" },
 ]
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "pyrefly", specifier = ">=0.1.0" },
+    { name = "pyrefly", specifier = ">=1.0.0" },
     { name = "pytest", specifier = ">=9.1.0" },
-    { name = "pytest-asyncio", specifier = ">=0.23.0" },
-    { name = "pytest-cov", specifier = ">=4.1.0" },
-    { name = "ruff", specifier = ">=0.3.0" },
+    { name = "pytest-asyncio", specifier = ">=1.4.0" },
+    { name = "pytest-cov", specifier = ">=7.1.0" },
+    { name = "ruff", specifier = ">=0.15.17" },
 ]
 
 [[package]]
