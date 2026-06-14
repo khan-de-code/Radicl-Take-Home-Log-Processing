@@ -122,8 +122,8 @@
 
 **Purpose**: Resource limits, performance benchmarking, golden testing, and quality checks.
 
-- [ ] T035 Implement 64KB log line cap validation and client disconnection in src/adapters/inbound/tcp_server.py
-- [ ] T036 Implement connection concurrency limiting (max 100) and idle timeout (30 seconds) in src/adapters/inbound/tcp_server.py
+- [X] T035 Implement 64KB log line cap validation and client disconnection in src/adapters/inbound/tcp_server.py
+- [X] T036 Implement connection concurrency limiting (max 100) and idle timeout (30 seconds) in src/adapters/inbound/tcp_server.py
 - [ ] T037 Create golden-file snapshot tests against expected output directories in tests/golden/test_golden.py
 - [ ] T038 Implement throughput and latency benchmarking scripts in tests/performance/benchmark.py
 - [ ] T039 Run benchmarks locally to verify 5,000 events/second and < 5ms processing latency targets
