@@ -16,7 +16,7 @@ The service conforms to strict Python quality constraints: `ruff` is configured 
 
 **Language/Version**: Python 3.12+ (managed via `uv`)
 
-**Primary Dependencies**: `pydantic` (for static schema typing and validation), `pytest` (test suite)
+**Primary Dependencies**: `pydantic` (for static schema typing and validation), `rich-click` (CLI framework), `pytest` (test suite)
 
 **Storage**: None (stdout or local file sink only)
 
@@ -39,7 +39,7 @@ The service conforms to strict Python quality constraints: `ruff` is configured 
 - **Type Safety [Pass]**: Standard Pydantic v2 models will be used to enforce SCHEMA.md types. No raw dict operations for the final output. Static validation will run under the most aggressive `pyrefly` configuration. (Constitution §I)
 - **Error Isolation [Pass]**: Connection/parsing failures are isolated to a dead-letter queue or error destination. Single malformed log lines will not crash the server. (Constitution §II)
 - **Testing & Quality [Pass]**: Strict unit, integration, and golden-file tests will run automatically via `pytest` before commits. (Constitution §III)
-- **CLI/Logs Interface [Pass]**: Port, output paths, and parameters are configurable via standard CLI argparse. Logs are sent to stderr. (Constitution §IV)
+- **CLI/Logs Interface [Pass]**: Port, output paths, and parameters are configurable via standard CLI rich-click. Logs are sent to stderr. (Constitution §IV)
 - **Resource Bounding & Async [Pass]**: Input lines are capped at 64KB, connections capped at 100, idle timeouts enforced at 30s, and CPU parsing is processed asynchronously without blocking the main event loop. (Constitution §V)
 
 ## Project Structure

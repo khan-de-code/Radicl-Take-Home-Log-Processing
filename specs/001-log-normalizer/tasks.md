@@ -18,7 +18,7 @@
 
 - [ ] T001 Initialize uv workspace and virtualenv in root pyproject.toml
 - [ ] T002 Configure git exclusions in .gitignore
-- [ ] T003 [P] Configure ruff linting (all non-conflicting rules, Google docstrings) and pyrefly strict type checks in pyproject.toml
+- [ ] T003 [P] Add rich-click to dependencies via uv and configure ruff (all non-conflicting rules, Google docstrings) and pyrefly strict type checks in pyproject.toml
 - [ ] T004 [P] Configure pytest, pytest-asyncio, and pytest-cov in pyproject.toml
 - [ ] T005 Create local check commands and bootstrap command in justfile
 - [ ] T006 Configure local pre-commit checks running ruff, pyrefly, and pytest in .pre-commit-config.yaml
@@ -98,30 +98,35 @@
 
 ---
 
-## Phase 6: User Story 4 - Configure Ingestion via Command Line (Priority: P2)
+## Phase 6: User Story 4 - Configure Ingestion via Command Line & Optional TLS (Priority: P2)
 
-**Goal**: Configure listening port and target output destination via argparse CLI arguments.
+**Goal**: Configure listening port and target output destination via rich-click CLI arguments, and support optional client-auth TLS configuration.
 
-**Independent Test**: Launch daemon with `--port 6000 --output /tmp/norm.log`, verify port binding, and confirm normalized output is written to `/tmp/norm.log`.
+**Independent Test**: Launch daemon with `--port 6000 --output /tmp/norm.log`, verify beautiful help outputs, verify port binding, and confirm normalized output is written to `/tmp/norm.log`. Verify client-auth TLS rejects unauthenticated connections when cert parameters are provided.
 
 ### Tests for User Story 4
-- [ ] T027 [P] [US4] Create unit tests for argparse arguments processing in tests/unit/test_cli.py
+- [ ] T027 [P] [US4] Create unit tests for rich-click CLI processing in tests/unit/test_cli.py
+- [ ] T028 [P] [US4] Create unit/integration tests for TLS connectivity and client-auth validation in tests/integration/test_server.py
 
 ### Implementation for User Story 4
-- [ ] T028 [US4] Implement CLI argparse configurations parser in src/main.py
-- [ ] T029 [US4] Wire CLI configurations (`port`, `output`) to bootstrap server and file output stream writer in src/main.py
+- [ ] T029 [US4] Implement CLI parser using rich-click in src/main.py
+- [ ] T030 [US4] Wire CLI configurations (`port`, `output`) to bootstrap server and file output stream writer in src/main.py
+- [ ] T031 [US4] Implement SSL/TLS context loader and client-certificate verification in src/server.py
+- [ ] T032 [US4] Bind SSL context to the asyncio TCP listener if CLI certificate parameters are supplied in src/main.py
 
 ---
 
 ## Phase 7: Polish & Cross-Cutting Concerns
 
-**Purpose**: Resource limits, golden testing, and documentation updates.
+**Purpose**: Resource limits, performance benchmarking, golden testing, and quality checks.
 
-- [ ] T030 Implement 64KB log line cap validation and client disconnection in src/server.py
-- [ ] T031 Implement connection concurrency limiting (max 100) and idle timeout (30 seconds) in src/server.py
-- [ ] T032 Create golden-file snapshot tests against expected output directories in tests/golden/test_golden.py
-- [ ] T033 [P] Run quickstart.md validation guide scenarios locally to confirm end-to-end functionality
-- [ ] T034 [P] Verify code compliance against the pre-commit suite (format, lint, type checks, and pytest)
+- [ ] T033 Implement 64KB log line cap validation and client disconnection in src/server.py
+- [ ] T034 Implement connection concurrency limiting (max 100) and idle timeout (30 seconds) in src/server.py
+- [ ] T035 Create golden-file snapshot tests against expected output directories in tests/golden/test_golden.py
+- [ ] T036 Implement throughput and latency benchmarking scripts in tests/performance/benchmark.py
+- [ ] T037 Run benchmarks locally to verify 5,000 events/second and < 5ms processing latency targets
+- [ ] T038 [P] Run quickstart.md validation guide scenarios locally to confirm end-to-end functionality
+- [ ] T039 [P] Verify code compliance against the pre-commit suite (format, lint, type checks, and pytest)
 
 ---
 
@@ -142,4 +147,4 @@
 
 ## Implementation Strategy
 1. **MVP Scope**: User Story 1 (Ingest RFC 3164 Syslog logs). Stop and validate before adding NDJSON logs support.
-2. **Incremental Delivery**: Setup → Foundation → US1 (MVP) → US2 (Windows NDJSON) → US3 (Graceful Error isolation) → US4 (CLI configs) → Polish (Limits and Golden tests).
+2. **Incremental Delivery**: Setup → Foundation → US1 (MVP) → US2 (Windows NDJSON) → US3 (Graceful Error isolation) → US4 (CLI configs & TLS) → Polish (Limits, Benchmarks, and Golden tests).

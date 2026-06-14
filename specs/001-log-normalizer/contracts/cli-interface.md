@@ -4,7 +4,7 @@ This document defines the interface contracts for interacting with the Log Norma
 
 ## 1. CLI Command-Line Contract
 
-The service is invoked as a Python script/executable and accepts the following arguments:
+The service is invoked as a Python script/executable utilizing `rich-click` for structured, formatted console interactions and accepts the following arguments:
 
 | Flag | Argument Type | Default Value | Description |
 |---|---|---|---|
