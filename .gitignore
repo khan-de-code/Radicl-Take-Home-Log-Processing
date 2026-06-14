@@ -35,3 +35,7 @@ MANIFEST
 # OS files
 .DS_Store
 Thumbs.db
+
+# Testing coverage
+.coverage
+htmlcov/
