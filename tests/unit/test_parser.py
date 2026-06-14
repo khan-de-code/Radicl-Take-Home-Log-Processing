@@ -121,3 +121,45 @@ def test_parse_syslog_timestamp_missing_year() -> None:
     res_future = parse_line(log_future)
     assert res_future is not None
     assert res_future.timestamp.startswith(f"{current_year - 1}-12-31T23:59:59")
+
+
+def test_parse_json_valid_auth_success() -> None:
+    """Verify parsing of valid Windows Event 4624 (authentication success) NDJSON logs."""
+    raw_json = (
+        '{"System": {"EventID": 4624, '
+        '"TimeCreated": "2026-02-14T14:22:10.8831200Z", '
+        '"Computer": "dc01.contoso.local"}, '
+        '"EventData": {"TargetUserName": "jsmith", "IpAddress": "10.0.50.42"}, '
+        '"RenderingInfo": {"Message": "An account was successfully logged on.", '
+        '"Level": "Information", "Keywords": ["Audit Success"]}}'
+    )
+    result = parse_line(raw_json)
+    assert result is not None
+    assert result.timestamp.startswith("2026-02-14T14:22:10")
+    assert result.event_type == "start"
+    assert result.event_category == "authentication"
+    assert result.event_outcome == "success"
+    assert result.source_ip == "10.0.50.42"
+    assert result.user_name == "jsmith"
+    assert result.host_name == "dc01.contoso.local"
+    assert result.log_level == "info"
+    assert result.message == "An account was successfully logged on."
+
+
+def test_parse_json_empty_fields_omitted() -> None:
+    """Verify that "-" or empty values for TargetUserName or IpAddress are omitted.
+
+    They must be mapped to None.
+    """
+    raw_json = (
+        '{"System": {"EventID": 4624, '
+        '"TimeCreated": "2026-02-14T14:22:10.8831200Z", '
+        '"Computer": "dc01.contoso.local"}, '
+        '"EventData": {"TargetUserName": "-", "IpAddress": ""}, '
+        '"RenderingInfo": {"Message": "Logged on", '
+        '"Level": "Information", "Keywords": ["Audit Success"]}}'
+    )
+    result = parse_line(raw_json)
+    assert result is not None
+    assert result.source_ip is None
+    assert result.user_name is None

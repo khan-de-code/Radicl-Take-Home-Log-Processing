@@ -20,6 +20,13 @@ def test_ingestion() -> None:
     """Entry point for pytest-bdd scenario."""
 
 
+@scenario(
+    "features/ingestion.feature", "Ingest and parse a valid Windows Event NDJSON message over TCP"
+)
+def test_ingestion_windows_json() -> None:
+    """Entry point for Windows JSON scenario."""
+
+
 @given("the TCP normalizer server is running on localhost", target_fixture="server_context")
 def step_server_running() -> dict[str, Any]:
     """Fixture: Start the TCP normalizer server.
@@ -64,6 +71,28 @@ def step_server_running() -> dict[str, Any]:
 
 @when("a client sends a valid Syslog CEF line:")
 def step_send_line(server_context: dict[str, Any], docstring: str) -> None:
+    """Send log line to the running server.
+
+    Args:
+        server_context: The server state context dictionary.
+        docstring: The docstring content passed by pytest-bdd.
+    """
+    port = server_context["port"]
+    log_line = docstring.strip() + "\n"
+
+    async def _send() -> None:
+        _, writer = await asyncio.open_connection("127.0.0.1", port)
+        writer.write(log_line.encode("utf-8"))
+        await writer.drain()
+        await asyncio.sleep(0.1)
+        writer.close()
+        await writer.wait_closed()
+
+    server_context["loop"].run_until_complete(_send())
+
+
+@when("a client sends a valid Windows Event NDJSON line:")
+def step_send_windows_line(server_context: dict[str, Any], docstring: str) -> None:
     """Send log line to the running server.
 
     Args:

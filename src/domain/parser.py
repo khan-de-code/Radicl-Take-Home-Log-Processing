@@ -5,6 +5,7 @@ appropriate parser (Syslog CEF or Windows NDJSON) using a high-performance,
 single-pass character scanner (avoiding regex backtracking overhead).
 """
 
+import json
 import logging
 from datetime import UTC, datetime, timedelta
 
@@ -17,6 +18,14 @@ CEF_HEADER_SPLIT_THRESHOLD = 7
 CEF_MINIMUM_HEADERS = 8
 SYSLOG_MINIMUM_TIMESTAMP_LENGTH = 15
 SYSLOG_TIMESTAMP_WIDTH = 15
+
+# Windows Event ID mapping constants
+EVENT_ID_AUTH_START = {4624, 4625, 4648}
+EVENT_ID_AUTH_END = {4634, 4647}
+EVENT_ID_PROCESS_START = 4688
+EVENT_ID_PROCESS_END = 4689
+EVENT_ID_HOST_INFO_MIN = 4720
+EVENT_ID_HOST_INFO_MAX = 4767
 
 # Standard mapping for CEF / Syslog Severity values to schema levels
 CEF_SEVERITY_MAP = {
@@ -354,6 +363,136 @@ def parse_syslog_cef_linear(line: str) -> NormalizedLog | None:
     )
 
 
+def _map_json_event_metadata(event_id: int) -> tuple[str, str]:
+    """Resolve event.type and event.category based on Windows EventID.
+
+    Args:
+        event_id: The Windows System EventID integer.
+
+    Returns:
+        A tuple of (event_type, event_category).
+    """
+    # Defaults
+    event_type = "info"
+    event_category = "host"
+
+    # Category and Type resolved from EventID
+    if event_id in EVENT_ID_AUTH_START:
+        event_type = "start"
+        event_category = "authentication"
+    elif event_id in EVENT_ID_AUTH_END:
+        event_type = "end"
+        event_category = "authentication"
+    elif event_id == EVENT_ID_PROCESS_START:
+        event_type = "start"
+        event_category = "process"
+    elif event_id == EVENT_ID_PROCESS_END:
+        event_type = "end"
+        event_category = "process"
+    elif EVENT_ID_HOST_INFO_MIN <= event_id <= EVENT_ID_HOST_INFO_MAX:
+        event_type = "info"
+        event_category = "host"
+
+    return event_type, event_category
+
+
+def _map_json_outcome(keywords: list[str]) -> str:
+    """Resolve event.outcome from RenderingInfo.Keywords list.
+
+    Args:
+        keywords: List of keyword strings.
+
+    Returns:
+        The mapped outcome string (success, failure, or unknown).
+    """
+    if not keywords:
+        return "unknown"
+
+    # Search list of keywords
+    keywords_lower = [keyword.lower() for keyword in keywords]
+    if any("success" in keyword for keyword in keywords_lower):
+        return "success"
+    if any("failure" in keyword for keyword in keywords_lower):
+        return "failure"
+    return "unknown"
+
+
+def parse_windows_json(line: str) -> NormalizedLog | None:
+    """Parse a minified Windows Event NDJSON line.
+
+    Args:
+        line: The raw JSON string line.
+
+    Returns:
+        NormalizedLog if validation succeeds, None otherwise.
+    """
+    try:
+        data = json.loads(line)
+    except json.JSONDecodeError as decode_error:
+        logger.warning("Failed to decode JSON log line: %s", decode_error)
+        return None
+
+    system = data.get("System", {})
+    event_data = data.get("EventData", {})
+    rendering_info = data.get("RenderingInfo", {})
+    open_wec = data.get("OpenWEC", {})
+
+    # Extract target values
+    raw_timestamp = system.get("TimeCreated")
+    if not raw_timestamp:
+        return None
+
+    # Standardize timestamp format to ISO 8601 UTC
+    if "." in raw_timestamp and raw_timestamp.endswith("Z"):
+        parts = raw_timestamp.split(".")
+        fraction = parts[1][:-1][:3]  # Take first 3 decimal digits
+        timestamp = f"{parts[0]}.{fraction}Z"
+    else:
+        timestamp = raw_timestamp
+
+    event_id = system.get("EventID", 0)
+    event_type, event_category = _map_json_event_metadata(event_id)
+
+    keywords = rendering_info.get("Keywords", [])
+    event_outcome = _map_json_outcome(keywords)
+
+    # Source IP: Prefer EventData.IpAddress, then OpenWEC.IpAddress
+    source_ip = event_data.get("IpAddress") or open_wec.get("IpAddress")
+    if source_ip in ["-", ""]:
+        source_ip = None
+
+    # User Name: Prefer TargetUserName, then SubjectUserName
+    user_name = event_data.get("TargetUserName") or event_data.get("SubjectUserName")
+    if user_name in ["-", ""]:
+        user_name = None
+
+    host_name = system.get("Computer")
+
+    # Log Level
+    level_raw = rendering_info.get("Level", "Information")
+    log_level = "info"
+    if "info" in level_raw.lower():
+        log_level = "info"
+    elif "warning" in level_raw.lower():
+        log_level = "warning"
+    elif "error" in level_raw.lower() or "critical" in level_raw.lower():
+        log_level = "error"
+
+    message = rendering_info.get("Message") or "Windows Event Log"
+
+    return NormalizedLog(
+        timestamp=timestamp,
+        event_type=event_type,
+        event_category=event_category,
+        event_outcome=event_outcome,
+        log_level=log_level,
+        source_ip=source_ip,
+        user_name=user_name,
+        host_name=host_name,
+        message=message,
+    )
+
+
 def parse_line(line: str) -> NormalizedLog | None:
     """Detect format of the log line and parse it into a NormalizedLog.
 
@@ -367,7 +506,10 @@ def parse_line(line: str) -> NormalizedLog | None:
     if not stripped:
         return None
 
-    # Syslog logs start with '<' (PRI marker)
+    # Format Detection: first non-whitespace is '{' -> JSON, otherwise Syslog
+    if stripped.startswith("{"):
+        return parse_windows_json(stripped)
+
     if stripped.startswith("<"):
         return parse_syslog_cef_linear(stripped)
 
