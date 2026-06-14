@@ -107,7 +107,7 @@
 
 ### Tests for User Story 4
 - [X] T028 [P] [US4] Create unit tests for rich-click CLI processing in tests/unit/test_cli.py
-- [ ] T029 [P] [US4] Create unit/integration tests for TLS connectivity and client-auth validation in tests/integration/test_server.py
+- [X] T029 [P] [US4] Create unit/integration tests for TLS connectivity and client-auth validation in tests/integration/test_server.py
 
 ### Implementation for User Story 4
 - [X] T030 [US4] Implement CLI parser using rich-click in src/adapters/inbound/cli.py

@@ -391,7 +391,10 @@ async def test_tcp_server_mtls_missing_client_cert(
         try:
             writer.write(b"should fail\n")
             await writer.drain()
-            await reader.read(1024)
+            data = await reader.read(1024)
+            if data == b"":
+                msg = "Connection closed by peer"
+                raise ConnectionResetError(msg)
         finally:
             writer.close()
             await writer.wait_closed()
