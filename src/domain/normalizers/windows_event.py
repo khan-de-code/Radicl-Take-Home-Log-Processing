@@ -13,11 +13,11 @@ EVENT_ID_HOST_INFO_MAX = 4767
 
 
 def _clean_sentinel(value: str | None) -> str | None:
-    """Treat '-' and empty strings as null and omit/clean them."""
+    """Treat '-', empty strings, and null SIDs (S-1-0-0) as null and omit/clean them."""
     if value is None:
         return None
     stripped = value.strip()
-    if stripped in ("-", ""):
+    if stripped in ("-", "", "S-1-0-0"):
         return None
     return stripped
 

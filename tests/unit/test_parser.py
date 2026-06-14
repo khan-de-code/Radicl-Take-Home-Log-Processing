@@ -208,3 +208,23 @@ def test_parser_adjustments() -> None:
     assert res_sentinel_syslog is not None
     assert res_sentinel_syslog.host_name is None
     assert res_sentinel_syslog.message is None
+
+    # 4. Null SID S-1-0-0 sentinel cleaning
+    raw_json_sid = (
+        '{"System": {"EventID": "4624", '
+        '"TimeCreated": "2026-02-14T14:22:10.883-05:00", '
+        '"Computer": "dc01.local"}, '
+        '"EventData": {"TargetUserName": "S-1-0-0"}, '
+        '"RenderingInfo": {"Message": "Msg", '
+        '"Level": "Information", "Keywords": []}}'
+    )
+    res_json_sid = parse_line(raw_json_sid)
+    assert res_json_sid is not None
+    assert res_json_sid.user_name is None
+
+    # 5. Syslog auth logoff context mapping
+    log_logoff = "<13>Jan 01 00:00:00 myhost CEF:0|Vendor|Prod|1.0|SIG|Name|3|msg=User logged out"
+    res_logoff = parse_line(log_logoff)
+    assert res_logoff is not None
+    assert res_logoff.event_type == "end"
+    assert res_logoff.event_category == "authentication"

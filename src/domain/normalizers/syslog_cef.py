@@ -57,11 +57,22 @@ def _resolve_by_keyword_matching(message: str, action: str) -> tuple[str, str, s
         event_outcome = "failure"
 
     lower_message = message.lower()
-    if any(term in lower_message for term in ["log on", "logged on", "logon", "login", "auth"]):
+    if any(
+        term in lower_message
+        for term in ["log off", "logged off", "logoff", "log out", "logged out", "logout"]
+    ):
         event_category = "authentication"
+        event_type = "end"
         if "success" in lower_message or "allow" in lower_message:
             event_outcome = "success"
-        elif "fail" in lower_message or "deny" in lower_message:
+        elif any(t in lower_message for t in ["fail", "deny", "failed"]):
+            event_outcome = "failure"
+    elif any(term in lower_message for term in ["log on", "logged on", "logon", "login", "auth"]):
+        event_category = "authentication"
+        event_type = "start"
+        if "success" in lower_message or "allow" in lower_message:
+            event_outcome = "success"
+        elif any(t in lower_message for t in ["fail", "deny", "failed"]):
             event_outcome = "failure"
     elif any(term in lower_message for term in ["connection", "traffic"]):
         event_category = "network"
@@ -70,11 +81,11 @@ def _resolve_by_keyword_matching(message: str, action: str) -> tuple[str, str, s
 
 
 def _clean_sentinel(value: str | None) -> str | None:
-    """Treat '-' and empty strings as null and omit/clean them."""
+    """Treat '-', empty strings, and null SIDs (S-1-0-0) as null and omit/clean them."""
     if value is None:
         return None
     stripped = value.strip()
-    if stripped in ("-", ""):
+    if stripped in ("-", "", "S-1-0-0"):
         return None
     return stripped
 
