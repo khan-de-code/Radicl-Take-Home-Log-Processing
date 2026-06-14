@@ -116,10 +116,14 @@ def normalize_windows_event(data: dict[str, any]) -> NormalizedLog | None:
     event_outcome = _map_json_outcome(keywords)
 
     # Source IP: Prefer EventData.IpAddress, then OpenWEC.IpAddress
-    source_ip = event_data.get("IpAddress") or open_wec.get("IpAddress")
+    event_ip = _clean_sentinel(event_data.get("IpAddress"))
+    wec_ip = _clean_sentinel(open_wec.get("IpAddress"))
+    source_ip = event_ip or wec_ip
 
     # User Name: Prefer TargetUserName, then SubjectUserName
-    user_name = event_data.get("TargetUserName") or event_data.get("SubjectUserName")
+    target_user = _clean_sentinel(event_data.get("TargetUserName"))
+    subject_user = _clean_sentinel(event_data.get("SubjectUserName"))
+    user_name = target_user or subject_user
 
     host_name = system.get("Computer")
 
@@ -142,8 +146,8 @@ def normalize_windows_event(data: dict[str, any]) -> NormalizedLog | None:
         event_category=event_category,
         event_outcome=event_outcome,
         log_level=log_level,
-        source_ip=_clean_sentinel(source_ip),
-        user_name=_clean_sentinel(user_name),
+        source_ip=source_ip,
+        user_name=user_name,
         host_name=_clean_sentinel(host_name),
         message=_clean_sentinel(message),
     )
