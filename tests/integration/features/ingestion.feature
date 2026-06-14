@@ -33,3 +33,11 @@ Feature: Log normalizer daemon TCP ingestion
       | host_name      | dc01.contoso.local                    |
       | log_level      | info                                  |
       | message        | An account was successfully logged on. |
+
+  Scenario: Ingest a malformed log line over TCP
+    Given the TCP normalizer server is running on localhost
+    When a client sends a malformed log line:
+      """
+      {"invalid_json:
+      """
+    Then the server should capture the parsing error for that line

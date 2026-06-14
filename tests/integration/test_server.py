@@ -27,6 +27,11 @@ def test_ingestion_windows_json() -> None:
     """Entry point for Windows JSON scenario."""
 
 
+@scenario("features/ingestion.feature", "Ingest a malformed log line over TCP")
+def test_ingestion_malformed() -> None:
+    """Entry point for malformed log scenario."""
+
+
 @given("the TCP normalizer server is running on localhost", target_fixture="server_context")
 def step_server_running() -> dict[str, Any]:
     """Fixture: Start the TCP normalizer server.
@@ -35,12 +40,13 @@ def step_server_running() -> dict[str, Any]:
         A dictionary containing server state context.
     """
     received_logs: list[NormalizedLog] = []
+    received_errors: list[tuple[str, Exception]] = []
 
     async def mock_sink(log: NormalizedLog) -> None:
         received_logs.append(log)
 
     async def mock_error_handler(raw_line: str, error: Exception) -> None:
-        pass
+        received_errors.append((raw_line, error))
 
     server = LogNormalizerTCPServer(
         host="127.0.0.1",
@@ -65,8 +71,24 @@ def step_server_running() -> dict[str, Any]:
         "port": actual_port,
         "task": server_task,
         "received_logs": received_logs,
+        "received_errors": received_errors,
         "loop": loop,
     }
+
+
+def _send_text(server_context: dict[str, Any], text: str) -> None:
+    port = server_context["port"]
+    log_line = text.strip() + "\n"
+
+    async def _send() -> None:
+        _, writer = await asyncio.open_connection("127.0.0.1", port)
+        writer.write(log_line.encode("utf-8"))
+        await writer.drain()
+        await asyncio.sleep(0.1)
+        writer.close()
+        await writer.wait_closed()
+
+    server_context["loop"].run_until_complete(_send())
 
 
 @when("a client sends a valid Syslog CEF line:")
@@ -77,18 +99,7 @@ def step_send_line(server_context: dict[str, Any], docstring: str) -> None:
         server_context: The server state context dictionary.
         docstring: The docstring content passed by pytest-bdd.
     """
-    port = server_context["port"]
-    log_line = docstring.strip() + "\n"
-
-    async def _send() -> None:
-        _, writer = await asyncio.open_connection("127.0.0.1", port)
-        writer.write(log_line.encode("utf-8"))
-        await writer.drain()
-        await asyncio.sleep(0.1)
-        writer.close()
-        await writer.wait_closed()
-
-    server_context["loop"].run_until_complete(_send())
+    _send_text(server_context, docstring)
 
 
 @when("a client sends a valid Windows Event NDJSON line:")
@@ -99,18 +110,18 @@ def step_send_windows_line(server_context: dict[str, Any], docstring: str) -> No
         server_context: The server state context dictionary.
         docstring: The docstring content passed by pytest-bdd.
     """
-    port = server_context["port"]
-    log_line = docstring.strip() + "\n"
+    _send_text(server_context, docstring)
 
-    async def _send() -> None:
-        _, writer = await asyncio.open_connection("127.0.0.1", port)
-        writer.write(log_line.encode("utf-8"))
-        await writer.drain()
-        await asyncio.sleep(0.1)
-        writer.close()
-        await writer.wait_closed()
 
-    server_context["loop"].run_until_complete(_send())
+@when("a client sends a malformed log line:")
+def step_send_malformed_line(server_context: dict[str, Any], docstring: str) -> None:
+    """Send log line to the running server.
+
+    Args:
+        server_context: The server state context dictionary.
+        docstring: The docstring content passed by pytest-bdd.
+    """
+    _send_text(server_context, docstring)
 
 
 @then("the output sink should receive a normalized log matching:")
@@ -150,3 +161,27 @@ def step_verify_log(server_context: dict[str, Any], datatable: list[list[str]]) 
     assert log.host_name == expected_values["host_name"]
     assert log.log_level == expected_values["log_level"]
     assert log.message == expected_values["message"]
+
+
+@then("the server should capture the parsing error for that line")
+def step_verify_error(server_context: dict[str, Any]) -> None:
+    """Verify that parsing error was captured.
+
+    Args:
+        server_context: The server state context dictionary.
+    """
+    loop = server_context["loop"]
+    server_context["task"].cancel()
+
+    async def _stop() -> None:
+        with contextlib.suppress(asyncio.CancelledError):
+            await server_context["task"]
+        await server_context["server"].stop()
+
+    loop.run_until_complete(_stop())
+
+    received_errors = server_context["received_errors"]
+    assert len(received_errors) == 1
+    raw_line, error = received_errors[0]
+    assert raw_line == '{"invalid_json:'
+    assert isinstance(error, ValueError)

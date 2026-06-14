@@ -122,10 +122,18 @@ class LogNormalizerTCPServer:
         """
         try:
             normalized = self.parser(line)
-            if normalized:
-                await self.sink(normalized)
         except Exception as error:  # noqa: BLE001
             await self.on_error(line, error)
+            return
+
+        if normalized:
+            try:
+                await self.sink(normalized)
+            except Exception as error:  # noqa: BLE001
+                await self.on_error(line, error)
+        else:
+            error_msg = "Malformed or unsupported log format"
+            await self.on_error(line, ValueError(error_msg))
 
     def serve_forever(self) -> Coroutine[None, None, None]:
         """Return a coroutine that runs until the server is explicitly stopped.
