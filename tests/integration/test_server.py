@@ -36,6 +36,22 @@ def test_ingestion_malformed() -> None:
     """Entry point for malformed log scenario."""
 
 
+@scenario(
+    "features/ingestion.feature",
+    "Ingest and parse a leap year Feb 29 Windows Event NDJSON message over TCP",
+)
+def test_ingestion_leap_year() -> None:
+    """Entry point for leap year scenario."""
+
+
+@scenario(
+    "features/ingestion.feature",
+    "Ingest and parse a Windows Event with timezone offset and user/IP fallbacks",
+)
+def test_ingestion_offsets_and_fallbacks() -> None:
+    """Entry point for offsets and fallbacks scenario."""
+
+
 @given("the TCP normalizer server is running on localhost", target_fixture="server_context")
 def step_server_running() -> dict[str, Any]:
     """Fixture: Start the TCP normalizer server.
@@ -157,14 +173,19 @@ def step_verify_log(server_context: dict[str, Any], datatable: list[list[str]]) 
         if len(row) == EXPECTED_DATATABLE_COLS:
             expected_values[row[0]] = row[1]
 
-    assert log.event_type == expected_values["event_type"]
-    assert log.event_category == expected_values["event_category"]
-    assert log.event_outcome == expected_values["event_outcome"]
-    assert log.source_ip == expected_values["source_ip"]
-    assert log.user_name == expected_values["user_name"]
-    assert log.host_name == expected_values["host_name"]
-    assert log.log_level == expected_values["log_level"]
-    assert log.message == expected_values["message"]
+    def clean_val(v: str | None) -> str | None:
+        if v in (None, "", "None"):
+            return None
+        return v
+
+    assert clean_val(log.event_type) == clean_val(expected_values.get("event_type"))
+    assert clean_val(log.event_category) == clean_val(expected_values.get("event_category"))
+    assert clean_val(log.event_outcome) == clean_val(expected_values.get("event_outcome"))
+    assert clean_val(log.source_ip) == clean_val(expected_values.get("source_ip"))
+    assert clean_val(log.user_name) == clean_val(expected_values.get("user_name"))
+    assert clean_val(log.host_name) == clean_val(expected_values.get("host_name"))
+    assert clean_val(log.log_level) == clean_val(expected_values.get("log_level"))
+    assert clean_val(log.message) == clean_val(expected_values.get("message"))
 
 
 @then("the server should capture the parsing error for that line")

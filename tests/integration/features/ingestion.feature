@@ -41,3 +41,38 @@ Feature: Log normalizer daemon TCP ingestion
       {"invalid_json:
       """
     Then the server should capture the parsing error for that line
+
+  Scenario: Ingest and parse a leap year Feb 29 Windows Event NDJSON message over TCP
+    Given the TCP normalizer server is running on localhost
+    When a client sends a valid Windows Event NDJSON line:
+      """
+      {"System": {"EventID": "4624", "TimeCreated": "2024-02-29T14:22:10.8831200Z", "Computer": "dc01.contoso.local"}, "EventData": {"TargetUserName": "jsmith", "IpAddress": "10.0.50.42"}, "RenderingInfo": {"Message": "An account was successfully logged on.", "Level": "Information", "Keywords": ["Audit Success"]}}
+      """
+    Then the output sink should receive a normalized log matching:
+      | field          | value                                 |
+      | event_type     | start                                 |
+      | event_category | authentication                        |
+      | event_outcome  | success                               |
+      | source_ip      | 10.0.50.42                            |
+      | user_name      | jsmith                                |
+      | host_name      | dc01.contoso.local                    |
+      | log_level      | info                                  |
+      | message        | An account was successfully logged on. |
+
+  Scenario: Ingest and parse a Windows Event with timezone offset and user/IP fallbacks
+    Given the TCP normalizer server is running on localhost
+    When a client sends a valid Windows Event NDJSON line:
+      """
+      {"System": {"EventID": 4624, "TimeCreated": "2026-02-14T14:22:10-06:00", "Computer": "dc01.contoso.local"}, "EventData": {"TargetUserName": "S-1-0-0", "SubjectUserName": "backupuser", "IpAddress": "-", "IpPort": "12345"}, "RenderingInfo": {"Message": "An account was successfully logged on.", "Level": "Information", "Keywords": ["Audit Success"]}}
+      """
+    Then the output sink should receive a normalized log matching:
+      | field          | value                                 |
+      | event_type     | start                                 |
+      | event_category | authentication                        |
+      | event_outcome  | success                               |
+      | source_ip      | None                                  |
+      | user_name      | backupuser                            |
+      | host_name      | dc01.contoso.local                    |
+      | log_level      | info                                  |
+      | message        | An account was successfully logged on. |
+
