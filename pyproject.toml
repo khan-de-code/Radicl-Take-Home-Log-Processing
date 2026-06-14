@@ -24,6 +24,9 @@ pythonpath = ["src"]
 asyncio_mode = "auto"
 testpaths = ["tests"]
 python_files = ["test_*.py"]
+filterwarnings = [
+    "ignore::pytest.PytestRemovedIn10Warning",
+]
 
 [tool.ruff]
 line-length = 100
