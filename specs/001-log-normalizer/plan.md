@@ -62,12 +62,24 @@ specs/001-log-normalizer/
 
 ```text
 src/
+├── domain/               # Core business logic (pure, framework-independent)
+│   ├── __init__.py
+│   ├── models.py         # NormalizedLog schema models (Pydantic)
+│   ├── parser.py         # Syslog, CEF, and NDJSON format detection and parsing logic
+│   ├── ports.py          # Interfaces defining inbound/outbound communication channels
+│   └── utils.py          # Business utility logic (timezone/date adjustments)
+├── adapters/             # Adapters implementing port interfaces
+│   ├── __init__.py
+│   ├── inbound/          # Driving adapters (TCP, CLI)
+│   │   ├── __init__.py
+│   │   ├── tcp_server.py # Asyncio TCP server listener adapter
+│   │   └── cli.py        # Rich-click CLI command parser adapter
+│   └── outbound/         # Driven adapters (Stdout, File Sinks)
+│       ├── __init__.py
+│       ├── stdout_sink.py # Standard output console adapter
+│       └── file_sink.py  # Local filesystem writer adapter
 ├── __init__.py
-├── main.py              # CLI entry point, argparse, service bootstrap
-├── server.py            # TCP Listener, connection manager (asyncio.start_server)
-├── parser.py            # Format detection, RFC 3164 Syslog + CEF parser, JSON parser
-├── models.py            # Pydantic models mapping to SCHEMA.md
-└── utils.py             # General utilities (date adjustment, structured logging)
+└── main.py               # Dependency injection wireframe & service assembler
 
 tests/
 ├── __init__.py
@@ -86,7 +98,7 @@ justfile                 # Command runner for development tasks
 pyproject.toml           # Configuration for Python dependencies, ruff, pyrefly, and pytest
 ```
 
-**Structure Decision**: Standard single project structure using `src/` and `tests/` directories matching Option 1.
+**Structure Decision**: Hexagonal Architecture layout mapped under `src/domain/` and `src/adapters/` matching Option 1 reorganized.
 
 ## Local Quality Gates & Setup Details
 
