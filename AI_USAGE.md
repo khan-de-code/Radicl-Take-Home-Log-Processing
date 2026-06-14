@@ -3,7 +3,7 @@
 This document discloses the usage of AI tools during the development of the Log Normalizer service.
 
 ## Tools Used
-- **Antigravity (Google DeepMind AI Coding Assistant)**: Used throughout pair-programming, code generation, refactoring, and test writing.
+- **Antigravity**: Used throughout pair-programming, code generation, refactoring, and test writing.
 
 ## Usage Details
 - **Boilerplate & Infrastructure**: Generated the initial scaffolding, directory layout, and TCP asyncio server code.
