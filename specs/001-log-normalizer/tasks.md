@@ -16,12 +16,12 @@
 
 **Purpose**: Project initialization and basic structure
 
-- [ ] T001 Initialize uv workspace and virtualenv in root pyproject.toml
-- [ ] T002 Configure git exclusions in .gitignore
-- [ ] T003 [P] Add rich-click to dependencies via uv and configure ruff (all non-conflicting rules, Google docstrings) and pyrefly strict type checks in pyproject.toml
-- [ ] T004 [P] Configure pytest, pytest-asyncio, and pytest-cov in pyproject.toml
-- [ ] T005 Create local check commands and bootstrap command in justfile
-- [ ] T006 Configure local pre-commit checks running ruff, pyrefly, and pytest in .pre-commit-config.yaml
+- [X] T001 Initialize uv workspace and virtualenv in root pyproject.toml
+- [X] T002 Configure git exclusions in .gitignore
+- [X] T003 [P] Add rich-click to dependencies via uv and configure ruff (all non-conflicting rules, Google docstrings) and pyrefly strict type checks in pyproject.toml
+- [X] T004 [P] Configure pytest, pytest-asyncio, and pytest-cov in pyproject.toml
+- [X] T005 Create local check commands and bootstrap command in justfile
+- [X] T006 Configure local pre-commit checks running ruff, pyrefly, and pytest in .pre-commit-config.yaml
 
 ---
 

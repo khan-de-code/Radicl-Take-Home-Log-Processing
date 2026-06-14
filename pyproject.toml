@@ -1,12 +1,44 @@
 [project]
 name = "backend-engineering-excercise"
 version = "0.1.0"
-description = "Add your description here"
+description = "Log Normalizer Service with high-concurrency TCP listener"
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "pydantic>=2.7.0",
+    "rich-click>=1.7.0",
+]
 
 [dependency-groups]
 dev = [
     "pytest>=9.1.0",
+    "pytest-asyncio>=0.23.0",
+    "pytest-cov>=4.1.0",
+    "ruff>=0.3.0",
+    "pyrefly>=0.1.0",
 ]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+    "D203",   # One blank line before class (conflicts with D211)
+    "D213",   # Multi-line docstring summary second line (conflicts with D212)
+    "COM812", # Trailing comma (recommended ignore when using ruff format)
+    "ISC001", # Implicit string concatenation (recommended ignore when using ruff format)
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Allow asserts in tests, and ignore namespace package warnings in tests/
+"tests/**/*.py" = ["S101", "INP001"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
