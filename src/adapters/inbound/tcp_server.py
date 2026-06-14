@@ -8,6 +8,7 @@ import asyncio
 import contextlib
 import logging
 from collections.abc import Coroutine
+from typing import Any
 
 from domain.ports import LogErrorHandlerPort, LogParserPort, LogSinkPort
 
@@ -54,6 +55,17 @@ class LogNormalizerTCPServer:
         )
         addr = self._server.sockets[0].getsockname()
         logger.info("TCP Server listening on %s", addr)
+
+    @property
+    def sockets(self) -> list[Any]:
+        """Return sockets that the server is currently listening on.
+
+        Returns:
+            A list of socket objects, or empty list if not running.
+        """
+        if self._server:
+            return self._server.sockets
+        return []
 
     async def stop(self) -> None:
         """Gracefully shut down the TCP server, closing all active connections."""
