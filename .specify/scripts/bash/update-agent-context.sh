@@ -1,0 +1,1 @@
+../../extensions/agent-context/scripts/bash/update-agent-context.sh
