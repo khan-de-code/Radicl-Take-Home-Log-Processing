@@ -68,7 +68,7 @@ As an Operator, I want to configure the listening TCP port and the output destin
 
 ### Edge Cases
 
-- **Large Payload Flood**: What happens when a client sends a payload line larger than 64KB? (System must truncate/drop connection).
+- **Large Payload Flood**: What happens when a client sends a payload line larger than 64KB? (System must truncate the line, drop the connection, and log a warning).
 - **Missing Year in Syslog**: How does the parser handle RFC 3164 timestamps that do not include the year field? (System must assume the current UTC calendar year).
 - **Empty and Sentinel values**: How does the system handle fields containing `-` or SIDs containing `S-1-0-0`? (System must omit these fields from output).
 - **Mixed Formats in Connection**: How does the server handle receiving a Syslog line followed by a JSON line on the same TCP connection? (Per-line format detection must handle each dynamically).
@@ -87,6 +87,9 @@ As an Operator, I want to configure the listening TCP port and the output destin
 - **FR-008**: System MUST enforce a maximum payload size limit of 64KB per log line, disconnecting clients that exceed this limit.
 - **FR-009**: System MUST run parsing asynchronously, ensuring that CPU-heavy parsing operations or large payloads do not block the single-threaded event loop.
 - **FR-010**: System MUST support client-auth TLS configuration on the TCP listener if TLS parameters are supplied via the command line.
+- **FR-011**: System MUST support graceful shutdown upon receiving termination signals (`SIGINT`, `SIGTERM`), ensuring all active sockets are drained within a configurable grace period and resources/ports are released cleanly.
+- **FR-012**: System MUST enforce a maximum limit of concurrent TCP connections (default: 100) to prevent socket exhaustion.
+- **FR-013**: System MUST enforce a configurable connection read/write idle timeout (default: 30 seconds) on active socket channels.
 
 ### Key Entities
 
@@ -106,5 +109,11 @@ As an Operator, I want to configure the listening TCP port and the output destin
 
 - Ingested log streams are newline-delimited (`\n` or `\r\n`).
 - Syslog dates without a specified year (default in RFC 3164) are assumed to belong to the current UTC calendar year.
+- Syslog dates without timezone metadata are assumed to be in UTC.
 - Obscure SIDs (such as `S-1-0-0`) and `-` values represent empty/null and are omitted from the target mappings.
 - Volumetric network-level protection (e.g. rate-limiting, source IP blocking) will be handled by external firewall rules or load balancers, while the application enforces connection-level size limits.
+- The mapping of Syslog/CEF severities to `log.level` follows this standardized matrix:
+  * Syslog Severity 0-3 (Emergency, Alert, Critical, Error) / CEF 7-10 -> `error`
+  * Syslog Severity 4 (Warning) / CEF 4-6 -> `warning`
+  * Syslog Severity 5-6 (Notice, Informational) / CEF 1-3 -> `info`
+  * Syslog Severity 7 (Debug) / CEF 0 -> `debug`
