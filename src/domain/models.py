@@ -2,7 +2,7 @@
 
 import re
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 # ISO 8601 UTC format validator regex (e.g., 2026-06-14T03:52:44.123Z)
 ISO8601_UTC_REGEX = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$")
@@ -23,11 +23,10 @@ class NormalizedLog(BaseModel):
     host_name: str | None = Field(None, alias="host.name")
     message: str | None = Field(None, alias="message")
 
-    class Config:
-        """Configuration options for Pydantic."""
-
-        populate_by_name = True
-        extra = "ignore"
+    model_config = ConfigDict(
+        populate_by_name=True,
+        extra="ignore",
+    )
 
     @field_validator("timestamp")
     @classmethod

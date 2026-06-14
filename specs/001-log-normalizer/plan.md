@@ -12,11 +12,19 @@ The Log Normalizer Service is a database-less, highly concurrent TCP log ingesti
 
 The service conforms to strict Python quality constraints: `ruff` is configured with all non-conflicting rules and Google-style docstrings format, and `pyrefly` is enabled in its most aggressive static typing mode. The execution begins with an environmental bootstrap: configuring `uv` for package management, creating a `.gitignore`, and defining a `justfile` for automated testing, linting, and formatting checks.
 
-## Technical Context
+## Technical Context & Architecture Decisions
 
 **Language/Version**: Python 3.12+ (managed via `uv`)
 
 **Primary Dependencies**: `pydantic` (for static schema typing and validation), `rich-click` (CLI framework), `pytest` (test suite)
+
+**Parser Strategy**:
+Instead of regular expressions (which are prone to backtracking overhead, ReDoS vulnerabilities, and escape character parsing errors like `\|` in CEF), we implement a **single-pass linear scanner**.
+
+The scanner reads the input character-by-character:
+1. **Syslog Header**: Scans for the `<PRI>` bounds, parses the fixed-length/whitespace-delimited timestamp, and extracts the host.
+2. **CEF Headers**: Scans for `CEF:0` and splits the next 7 fields by pipe `|` while checking for escaped pipes `\|`.
+3. **CEF Extensions**: Scans key-value pairs sequentially by looking for `=` and parsing values until the next space-separated `key=` sequence, honoring escaped characters.
 
 **Storage**: None (stdout or local file sink only)
 
