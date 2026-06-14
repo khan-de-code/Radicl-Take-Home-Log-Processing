@@ -1,6 +1,8 @@
-def main():
-    print("Hello from backend-engineering-excercise!")
+"""CLI entry point for the Log Normalizer Service."""
+
+import sys
 
 
-if __name__ == "__main__":
-    main()
+def main() -> None:
+    """Run the main entry point of the Log Normalizer Service."""
+    sys.exit(0)
