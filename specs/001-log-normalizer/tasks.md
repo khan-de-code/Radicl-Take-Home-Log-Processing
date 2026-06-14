@@ -68,14 +68,14 @@
 **Independent Test**: Send minified `samples/json/sample-1.json` via netcat to port 5044, and verify output matches target NDJSON.
 
 ### Tests for User Story 2
-- [ ] T018 [P] [US2] Create unit tests for format detection (Syslog vs JSON) and nested Windows JSON extraction paths in tests/unit/test_parser.py
-- [ ] T019 [US2] Create integration test for TCP ingestion of NDJSON logs in tests/integration/test_server.py
+- [X] T018 [P] [US2] Create unit tests for format detection (Syslog vs JSON) and nested Windows JSON extraction paths in tests/unit/test_parser.py
+- [X] T019 [US2] Create integration test for TCP ingestion of NDJSON logs in tests/integration/test_server.py
 
 ### Implementation for User Story 2
-- [ ] T020 [US2] Implement first-character inspection format detector in src/domain/parser.py
-- [ ] T021 [P] [US2] Implement nested field path extraction for Windows Event Logs in src/domain/parser.py
-- [ ] T022 [US2] Map extracted Windows JSON fields to NormalizedLog attributes in src/domain/parser.py
-- [ ] T023 [US2] Integrate JSON parser routing in the TCP reader stream handler in src/adapters/inbound/tcp_server.py
+- [X] T020 [US2] Implement first-character inspection format detector in src/domain/parser.py
+- [X] T021 [P] [US2] Implement nested field path extraction for Windows Event Logs in src/domain/parser.py
+- [X] T022 [US2] Map extracted Windows JSON fields to NormalizedLog attributes in src/domain/parser.py
+- [X] T023 [US2] Integrate JSON parser routing in the TCP reader stream handler in src/adapters/inbound/tcp_server.py
 
 **Checkpoint**: At this point, User Stories 1 AND 2 should both work independently.
 
@@ -88,12 +88,12 @@
 **Independent Test**: Stream binary noise and malformed lines to port 5044 and verify the daemon stays active and processes subsequent valid logs.
 
 ### Tests for User Story 3
-- [ ] T024 [P] [US3] Create unit tests for parser exception handling and fallback mapping in tests/unit/test_parser.py
-- [ ] T025 [US3] Create integration test sending invalid lines to server and checking error logs in tests/integration/test_server.py
+- [X] T024 [P] [US3] Create unit tests for parser exception handling and fallback mapping in tests/unit/test_parser.py
+- [X] T025 [US3] Create integration test sending invalid lines to server and checking error logs in tests/integration/test_server.py
 
 ### Implementation for User Story 3
-- [ ] T026 [US3] Implement line-oriented try-except blocks to catch parser errors in src/adapters/inbound/tcp_server.py
-- [ ] T027 [US3] Add dead-letter routing to log malformed events without interrupting the stream in src/adapters/inbound/tcp_server.py
+- [X] T026 [US3] Implement line-oriented try-except blocks to catch parser errors in src/adapters/inbound/tcp_server.py
+- [X] T027 [US3] Add dead-letter routing to log malformed events without interrupting the stream in src/adapters/inbound/tcp_server.py
 
 **Checkpoint**: Daemon remains fully resilient to malformed payloads.
 
@@ -106,15 +106,15 @@
 **Independent Test**: Launch daemon with `--port 6000 --output /tmp/norm.log`, verify beautiful help outputs, verify port binding, and confirm normalized output is written to `/tmp/norm.log`. Verify client-auth TLS rejects unauthenticated connections when cert parameters are provided.
 
 ### Tests for User Story 4
-- [ ] T028 [P] [US4] Create unit tests for rich-click CLI processing in tests/unit/test_cli.py
+- [X] T028 [P] [US4] Create unit tests for rich-click CLI processing in tests/unit/test_cli.py
 - [ ] T029 [P] [US4] Create unit/integration tests for TLS connectivity and client-auth validation in tests/integration/test_server.py
 
 ### Implementation for User Story 4
-- [ ] T030 [US4] Implement CLI parser using rich-click in src/adapters/inbound/cli.py
-- [ ] T031 [US4] Wire CLI configurations (`port`, `output`) to bootstrap server and output adapter in src/main.py
-- [ ] T032 [US4] Implement SSL/TLS context loader and client-certificate verification in src/adapters/inbound/tcp_server.py
-- [ ] T033 [US4] Bind SSL context to the asyncio TCP listener if CLI certificate parameters are supplied in src/main.py
-- [ ] T034 [US4] Implement filesystem output sink in src/adapters/outbound/file_sink.py
+- [X] T030 [US4] Implement CLI parser using rich-click in src/adapters/inbound/cli.py
+- [X] T031 [US4] Wire CLI configurations (`port`, `output`) to bootstrap server and output adapter in src/main.py
+- [X] T032 [US4] Implement SSL/TLS context loader and client-certificate verification in src/adapters/inbound/tcp_server.py
+- [X] T033 [US4] Bind SSL context to the asyncio TCP listener if CLI certificate parameters are supplied in src/main.py
+- [X] T034 [US4] Implement filesystem output sink in src/adapters/outbound/file_sink.py
 
 ---
 
