@@ -7,6 +7,7 @@ parses them using a domain parser port, and sends normalized logs to a sink port
 import asyncio
 import contextlib
 import logging
+import ssl
 from collections.abc import Coroutine
 from typing import Any
 
@@ -22,13 +23,14 @@ class LogNormalizerTCPServer:
     routed to the configured LogSinkPort. Errors are routed to LogErrorHandlerPort.
     """
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         host: str,
         port: int,
         parser: LogParserPort,
         sink: LogSinkPort,
         on_error: LogErrorHandlerPort,
+        ssl_context: ssl.SSLContext | None = None,
     ) -> None:
         """Initialize the TCP server adapter with dependencies.
 
@@ -38,12 +40,14 @@ class LogNormalizerTCPServer:
             parser: Domain parser to parse raw lines.
             sink: Outbound sink to route normalized logs.
             on_error: Outbound port to handle processing errors.
+            ssl_context: Optional SSLContext to configure TLS.
         """
         self.host = host
         self.port = port
         self.parser = parser
         self.sink = sink
         self.on_error = on_error
+        self.ssl_context = ssl_context
         self._server: asyncio.AbstractServer | None = None
 
     async def start(self) -> None:
@@ -52,6 +56,7 @@ class LogNormalizerTCPServer:
             self._handle_client,
             self.host,
             self.port,
+            ssl=self.ssl_context,
         )
         addr = self._server.sockets[0].getsockname()
         logger.info("TCP Server listening on %s", addr)
@@ -148,3 +153,26 @@ class LogNormalizerTCPServer:
             msg = "Server must be started before calling serve_forever"
             raise RuntimeError(msg)
         return self._server.serve_forever()
+
+
+def create_ssl_context(
+    cert_path: str | None,
+    key_path: str | None,
+    ca_path: str | None = None,
+) -> ssl.SSLContext | None:
+    """Create an SSLContext for the TCP server.
+
+    If mutual TLS (mTLS) CA path is provided, client certificate verification is enforced.
+    """
+    if not cert_path or not key_path:
+        return None
+
+    # Server side context
+    context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+    context.load_cert_chain(certfile=cert_path, keyfile=key_path)
+
+    if ca_path:
+        context.load_verify_locations(cafile=ca_path)
+        context.verify_mode = ssl.CERT_REQUIRED
+
+    return context
