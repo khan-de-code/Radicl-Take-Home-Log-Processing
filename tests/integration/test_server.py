@@ -407,3 +407,129 @@ async def test_tcp_server_mtls_missing_client_cert(
         with contextlib.suppress(asyncio.CancelledError):
             await server_task
         await server.stop()
+
+
+@pytest.mark.asyncio
+async def test_tcp_server_line_limit() -> None:
+    """Verify that lines exceeding 64KB trigger a disconnect."""
+
+    async def mock_sink(log: NormalizedLog) -> None:
+        pass
+
+    async def mock_error(raw: str, error: Exception) -> None:
+        pass
+
+    server = LogNormalizerTCPServer(
+        host="127.0.0.1",
+        port=0,
+        parser=parse_line,
+        sink=mock_sink,
+        on_error=mock_error,
+    )
+    await server.start()
+    actual_port = server.sockets[0].getsockname()[1]
+    server_task = asyncio.create_task(server.serve_forever())
+
+    try:
+        reader, writer = await asyncio.open_connection("127.0.0.1", actual_port)
+        # Send a line larger than 64KB (65536 bytes)
+        large_line = b"a" * 70000 + b"\n"
+        writer.write(large_line)
+        await writer.drain()
+
+        # Read from stream. Because the line was overrun,
+        # the server must close the connection, returning EOF (b"")
+        data = await reader.read(1024)
+        assert data == b""
+        writer.close()
+        await writer.wait_closed()
+    finally:
+        server_task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await server_task
+        await server.stop()
+
+
+@pytest.mark.asyncio
+async def test_tcp_server_connection_limit() -> None:
+    """Verify that connections are rejected if max_connections is reached."""
+
+    async def mock_sink(log: NormalizedLog) -> None:
+        pass
+
+    async def mock_error(raw: str, error: Exception) -> None:
+        pass
+
+    server = LogNormalizerTCPServer(
+        host="127.0.0.1",
+        port=0,
+        parser=parse_line,
+        sink=mock_sink,
+        on_error=mock_error,
+        max_connections=2,
+    )
+    await server.start()
+    actual_port = server.sockets[0].getsockname()[1]
+    server_task = asyncio.create_task(server.serve_forever())
+
+    writers = []
+    try:
+        # Establish first two connections
+        _, w1 = await asyncio.open_connection("127.0.0.1", actual_port)
+        writers.append(w1)
+        _, w2 = await asyncio.open_connection("127.0.0.1", actual_port)
+        writers.append(w2)
+
+        # Third connection should be immediately closed by the server
+        r3, w3 = await asyncio.open_connection("127.0.0.1", actual_port)
+        data = await r3.read(1024)
+        assert data == b""
+        w3.close()
+        await w3.wait_closed()
+    finally:
+        for w in writers:
+            w.close()
+            with contextlib.suppress(Exception):
+                await w.wait_closed()
+        server_task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await server_task
+        await server.stop()
+
+
+@pytest.mark.asyncio
+async def test_tcp_server_idle_timeout() -> None:
+    """Verify that connections are disconnected after the inactivity idle timeout."""
+
+    async def mock_sink(log: NormalizedLog) -> None:
+        pass
+
+    async def mock_error(raw: str, error: Exception) -> None:
+        pass
+
+    server = LogNormalizerTCPServer(
+        host="127.0.0.1",
+        port=0,
+        parser=parse_line,
+        sink=mock_sink,
+        on_error=mock_error,
+        idle_timeout=0.1,  # 100ms
+    )
+    await server.start()
+    actual_port = server.sockets[0].getsockname()[1]
+    server_task = asyncio.create_task(server.serve_forever())
+
+    try:
+        reader, writer = await asyncio.open_connection("127.0.0.1", actual_port)
+        # Do not send anything and wait for 0.2 seconds
+        await asyncio.sleep(0.2)
+        # Server should disconnect client, so read returns EOF
+        data = await reader.read(1024)
+        assert data == b""
+        writer.close()
+        await writer.wait_closed()
+    finally:
+        server_task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await server_task
+        await server.stop()

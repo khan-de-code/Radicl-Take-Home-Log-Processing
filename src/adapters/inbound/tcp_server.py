@@ -31,6 +31,8 @@ class LogNormalizerTCPServer:
         sink: LogSinkPort,
         on_error: LogErrorHandlerPort,
         ssl_context: ssl.SSLContext | None = None,
+        max_connections: int = 100,
+        idle_timeout: float = 30.0,
     ) -> None:
         """Initialize the TCP server adapter with dependencies.
 
@@ -41,6 +43,8 @@ class LogNormalizerTCPServer:
             sink: Outbound sink to route normalized logs.
             on_error: Outbound port to handle processing errors.
             ssl_context: Optional SSLContext to configure TLS.
+            max_connections: Maximum limit of concurrent connections.
+            idle_timeout: Inactivity timeout in seconds.
         """
         self.host = host
         self.port = port
@@ -48,7 +52,10 @@ class LogNormalizerTCPServer:
         self.sink = sink
         self.on_error = on_error
         self.ssl_context = ssl_context
+        self.max_connections = max_connections
+        self.idle_timeout = idle_timeout
         self._server: asyncio.AbstractServer | None = None
+        self._active_connections = 0
 
     async def start(self) -> None:
         """Start the asynchronous TCP server and begin accepting connections."""
@@ -57,6 +64,7 @@ class LogNormalizerTCPServer:
             self.host,
             self.port,
             ssl=self.ssl_context,
+            limit=65536,
         )
         addr = self._server.sockets[0].getsockname()
         logger.info("TCP Server listening on %s", addr)
@@ -91,10 +99,45 @@ class LogNormalizerTCPServer:
             writer: StreamWriter to write responses or manage connection lifecycle.
         """
         client_address = writer.get_extra_info("peername")
-        logger.debug("New connection from %s", client_address)
+        if self._active_connections >= self.max_connections:
+            logger.warning(
+                "Rejected connection from %s: max connections (%d) reached.",
+                client_address,
+                self.max_connections,
+            )
+            writer.close()
+            with contextlib.suppress(ConnectionError):
+                await writer.wait_closed()
+            return
+
+        self._active_connections += 1
+        logger.debug(
+            "New connection from %s (Active: %d)",
+            client_address,
+            self._active_connections,
+        )
         try:
             while True:
-                line_bytes = await reader.readline()
+                try:
+                    # Enforce read timeout per line
+                    line_bytes = await asyncio.wait_for(
+                        reader.readline(),
+                        timeout=self.idle_timeout,
+                    )
+                except (asyncio.LimitOverrunError, ValueError) as buffer_error:
+                    logger.warning(
+                        "Client %s exceeded maximum line length limit (64KB): %s",
+                        client_address,
+                        buffer_error,
+                    )
+                    break
+                except TimeoutError:
+                    logger.warning(
+                        "Client %s timed out due to inactivity (idle timeout).",
+                        client_address,
+                    )
+                    break
+
                 if not line_bytes:
                     break
 
@@ -114,10 +157,15 @@ class LogNormalizerTCPServer:
             logger.exception("Unexpected client error from %s", client_address)
             await self.on_error("", error)
         finally:
+            self._active_connections -= 1
             writer.close()
             with contextlib.suppress(ConnectionError):
                 await writer.wait_closed()
-            logger.debug("Closed connection from %s", client_address)
+            logger.debug(
+                "Closed connection from %s (Active: %d)",
+                client_address,
+                self._active_connections,
+            )
 
     async def _process_line(self, line: str) -> None:
         """Parse and process a single log line.
