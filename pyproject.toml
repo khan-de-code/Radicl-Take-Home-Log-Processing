@@ -34,8 +34,6 @@ ignore = [
     "D213",   # Multi-line docstring summary second line (conflicts with D212)
     "COM812", # Trailing comma (recommended ignore when using ruff format)
     "ISC001", # Implicit string concatenation (recommended ignore when using ruff format)
-    "ANN101", # Missing type annotation for self (redundant)
-    "ANN102", # Missing type annotation for cls (redundant)
 ]
 
 [tool.ruff.lint.per-file-ignores]
