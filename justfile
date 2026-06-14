@@ -26,3 +26,11 @@ check: format lint test
 run *args:
     PYTHONPATH=src uv run python main.py {{args}}
 
+# Run performance and latency benchmarks
+benchmark:
+    PYTHONPATH=src uv run python tests/performance/benchmark.py
+
+# Run load scaling tests to identify capacity limits
+load-test:
+    PYTHONPATH=src uv run python tests/performance/load_test.py
+
