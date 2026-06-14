@@ -124,11 +124,11 @@
 
 - [X] T035 Implement 64KB log line cap validation and client disconnection in src/adapters/inbound/tcp_server.py
 - [X] T036 Implement connection concurrency limiting (max 100) and idle timeout (30 seconds) in src/adapters/inbound/tcp_server.py
-- [ ] T037 Create golden-file snapshot tests against expected output directories in tests/golden/test_golden.py
-- [ ] T038 Implement throughput and latency benchmarking scripts in tests/performance/benchmark.py
-- [ ] T039 Run benchmarks locally to verify 5,000 events/second and < 5ms processing latency targets
-- [ ] T040 [P] Run quickstart.md validation guide scenarios locally to confirm end-to-end functionality
-- [ ] T041 [P] Verify code compliance against the pre-commit suite (format, lint, type checks, and pytest)
+- [X] T037 Create golden-file snapshot tests against expected output directories in tests/golden/test_golden.py
+- [X] T038 Implement throughput and latency benchmarking scripts in tests/performance/benchmark.py
+- [X] T039 Run benchmarks locally to verify 5,000 events/second and < 5ms processing latency targets
+- [X] T040 [P] Run quickstart.md validation guide scenarios locally to confirm end-to-end functionality
+- [X] T041 [P] Verify code compliance against the pre-commit suite (format, lint, type checks, and pytest)
 
 ---
 

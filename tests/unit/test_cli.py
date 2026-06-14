@@ -30,5 +30,5 @@ def test_cli_invalid_path() -> None:
     """Verify that providing a non-existent TLS path exits 2."""
     runner = CliRunner()
     result = runner.invoke(cli, ["--tls-cert", "does_not_exist.pem"])
-    assert result.exit_code == 2  # noqa: PLR2004
+    assert result.exit_code == 2
     assert "does not exist" in result.output.lower()

@@ -40,7 +40,7 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 # Allow asserts in tests, and ignore namespace package warnings in tests/
-"tests/**/*.py" = ["S101", "INP001"]
+"tests/**/*.py" = ["S101", "INP001", "SLF001", "PLR2004"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"

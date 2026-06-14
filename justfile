@@ -21,3 +21,8 @@ test-cov:
 
 # Run full quality checking (format, lint, typecheck, tests)
 check: format lint test
+
+# Run the log normalizer daemon
+run *args:
+    PYTHONPATH=src uv run python main.py {{args}}
+
