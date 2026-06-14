@@ -7,6 +7,7 @@ single-pass character scanner (avoiding regex backtracking overhead).
 
 import json
 import logging
+from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 
 from domain.models import NormalizedLog
@@ -493,6 +494,13 @@ def parse_windows_json(line: str) -> NormalizedLog | None:
     )
 
 
+# Static dispatch registry mapping first non-whitespace character to appropriate parser function
+PARSER_REGISTRY: dict[str, Callable[[str], NormalizedLog | None]] = {
+    "{": parse_windows_json,
+    "<": parse_syslog_cef_linear,
+}
+
+
 def parse_line(line: str) -> NormalizedLog | None:
     """Detect format of the log line and parse it into a NormalizedLog.
 
@@ -506,11 +514,10 @@ def parse_line(line: str) -> NormalizedLog | None:
     if not stripped:
         return None
 
-    # Format Detection: first non-whitespace is '{' -> JSON, otherwise Syslog
-    if stripped.startswith("{"):
-        return parse_windows_json(stripped)
-
-    if stripped.startswith("<"):
-        return parse_syslog_cef_linear(stripped)
+    # Dynamic format dispatch using first character registry
+    prefix = stripped[0]
+    parser_func = PARSER_REGISTRY.get(prefix)
+    if parser_func:
+        return parser_func(stripped)
 
     return None
