@@ -48,14 +48,14 @@
 
 ### Tests for User Story 1
 - [X] T011 [P] [US1] Create table-driven unit tests for Syslog parsing (PRI, Header, CEF message) in tests/unit/test_parser.py
-- [ ] T012 [US1] Create integration test for TCP ingestion of RFC 3164 Syslog logs in tests/integration/test_server.py
+- [X] T012 [US1] Create integration test for TCP ingestion of RFC 3164 Syslog logs in tests/integration/test_server.py
 
 ### Implementation for User Story 1
 - [X] T013 [P] [US1] Implement Syslog PRI extraction and facility/severity resolver in src/domain/parser.py
 - [X] T014 [P] [US1] Implement CEF Extension message scanner/parser in src/domain/parser.py
 - [X] T015 [US1] Map parsed Syslog/CEF fields to NormalizedLog models in src/domain/parser.py
-- [ ] T016 [US1] Integrate Syslog parser into the TCP reader stream processing coroutine in src/adapters/inbound/tcp_server.py
-- [ ] T017 [US1] Implement console output writer in src/adapters/outbound/stdout_sink.py
+- [X] T016 [US1] Integrate Syslog parser into the TCP reader stream processing coroutine in src/adapters/inbound/tcp_server.py
+- [X] T017 [US1] Implement console output writer in src/adapters/outbound/stdout_sink.py
 
 **Checkpoint**: At this point, User Story 1 should be fully functional and testable independently.
 
