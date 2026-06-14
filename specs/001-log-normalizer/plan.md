@@ -82,10 +82,27 @@ tests/
 
 justfile                 # Command runner for development tasks
 .gitignore               # Workspace file exclusions
-pyproject.toml           # Configuration for Python dependencies, ruff, and pyrefly
+.pre-commit-config.yaml  # Local quality gate configuration running check suite before commit
+pyproject.toml           # Configuration for Python dependencies, ruff, pyrefly, and pytest
 ```
 
 **Structure Decision**: Standard single project structure using `src/` and `tests/` directories matching Option 1.
+
+## Local Quality Gates & Setup Details
+
+### 1. Pre-commit Setup (`.pre-commit-config.yaml`)
+To enforce that no code is committed unless it is formatted, linted, type-safe, and passes tests, a local hook configuration will execute:
+- `ruff check --fix` and `ruff format`
+- `pyrefly check` in its most aggressive mode
+- `pytest` for unit and integration checks
+
+### 2. Testing Configuration (`pyproject.toml`)
+We configure `pytest` options inside `pyproject.toml`:
+- Include `pytest-asyncio` for non-blocking server tests.
+- Include `pytest-cov` to track coverage metrics.
+
+### 3. Structured Logging
+The daemon will write structured logs to `stderr` formatted as single-line JSON or formatted log objects (using standard library extensions or `structlog`) to ensure errors, connections, and yields are easily parseable and descriptive.
 
 ## Complexity Tracking
 
