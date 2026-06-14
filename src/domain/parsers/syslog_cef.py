@@ -1,7 +1,9 @@
 """Low-level parser strategy for RFC 3164 Syslog and CEF logs."""
 
 import logging
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
+
+from domain.utils import adjust_syslog_year
 
 logger = logging.getLogger("log_normalizer")
 
@@ -15,19 +17,31 @@ def parse_syslog_timestamp(timestamp_string: str) -> str:
     """Parse syslog timestamp and normalize it to ISO 8601 UTC with calendar year logic."""
     normalized_timestamp = " ".join(timestamp_string.split())
     current_time = datetime.now(UTC)
-    current_year = current_time.year
 
     try:
-        parsed_datetime = datetime.strptime(normalized_timestamp, "%b %d %H:%M:%S").replace(
-            tzinfo=UTC
-        )
-    except ValueError as parse_error:
+        parts = normalized_timestamp.split()
+        month = parts[0]
+        day = int(parts[1])
+        time_parts = parts[2].split(":")
+        hour = int(time_parts[0])
+        minute = int(time_parts[1])
+        second = int(time_parts[2])
+    except (IndexError, ValueError) as parse_error:
         logger.warning("Failed to parse syslog timestamp %s: %s", timestamp_string, parse_error)
         return current_time.strftime("%Y-%m-%dT%H:%M:%S.000Z")
 
-    resolved_datetime = parsed_datetime.replace(year=current_year)
-    if resolved_datetime > current_time + timedelta(days=7):
-        resolved_datetime = resolved_datetime.replace(year=current_year - 1)
+    try:
+        resolved_datetime = adjust_syslog_year(
+            month=month,
+            day=day,
+            hour=hour,
+            minute=minute,
+            second=second,
+            system_clock=current_time,
+        )
+    except ValueError as val_error:
+        logger.warning("Failed to adjust syslog year %s: %s", timestamp_string, val_error)
+        return current_time.strftime("%Y-%m-%dT%H:%M:%S.000Z")
 
     return resolved_datetime.strftime("%Y-%m-%dT%H:%M:%S.000Z")
 

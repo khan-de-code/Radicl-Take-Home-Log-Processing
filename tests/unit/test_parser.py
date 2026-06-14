@@ -163,3 +163,48 @@ def test_parse_json_empty_fields_omitted() -> None:
     assert result is not None
     assert result.source_ip is None
     assert result.user_name is None
+
+
+def test_parser_adjustments() -> None:
+    """Verify leap-year, string EventID coercion, time offset, and sentinel cleaning."""
+    # 1. String EventID coercion & timezone offset conversion to UTC Z
+    raw_json_offset = (
+        '{"System": {"EventID": "4624", '
+        '"TimeCreated": "2026-02-14T14:22:10.883-05:00", '
+        '"Computer": "-"}, '
+        '"EventData": {"TargetUserName": "jsmith"}, '
+        '"RenderingInfo": {"Message": "", '
+        '"Level": "Information", "Keywords": ["Audit Success"]}}'
+    )
+    result = parse_line(raw_json_offset)
+    assert result is not None
+    # 14:22:10.883-05:00 converts to 19:22:10.883Z in UTC
+    assert result.timestamp == "2026-02-14T19:22:10.883Z"
+    assert result.event_type == "start"
+    assert result.event_category == "authentication"
+
+    # Sentinel cleaning of host_name and message
+    assert result.host_name is None
+    assert result.message is None
+
+    # 2. Leap-year Feb 29 rollover validation
+    # We test that adjust_syslog_year handles Feb 29.
+    # When parsing syslog logs lacking year with "Feb 29", it should roll
+    # over to a leap year (e.g. 2024 if current is 2026).
+    # Let's verify it parses without raising an exception.
+    log_leap = "<13>Feb 29 12:00:00 myhost CEF:0|Vendor|Prod|1.0|SIG|Name|3|msg=LeapYearTest"
+    res_leap = parse_line(log_leap)
+    assert res_leap is not None
+    # Verify it parsed the timestamp successfully
+    assert res_leap.timestamp.endswith("T12:00:00.000Z")
+    # Year must be a leap year (e.g. 2024 or 2028 depending on system clock).
+    year_part = int(res_leap.timestamp.split("-")[0])
+    # Year must be leap year (divisible by 4)
+    assert year_part % 4 == 0
+
+    # 3. Optional fields sentinel cleaning in syslog cef normalizer
+    log_sentinel_syslog = "<13>Jan 01 00:00:00 - CEF:0|Vendor|Prod|1.0|SIG|Name|3|msg=-"
+    res_sentinel_syslog = parse_line(log_sentinel_syslog)
+    assert res_sentinel_syslog is not None
+    assert res_sentinel_syslog.host_name is None
+    assert res_sentinel_syslog.message is None

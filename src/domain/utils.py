@@ -75,6 +75,9 @@ def adjust_syslog_year(  # noqa: PLR0913
         raise ValueError(error_message) from error
 
     year = system_clock.year
+    if month_num == 2 and day == 29:  # noqa: PLR2004
+        while not (year % 4 == 0 and (year % 100 != 0 or year % 400 == 0)):
+            year -= 1
     try:
         parsed_date = datetime.datetime(
             year, month_num, day, hour, minute, second, tzinfo=datetime.UTC

@@ -69,10 +69,20 @@ def _resolve_by_keyword_matching(message: str, action: str) -> tuple[str, str, s
     return event_type, event_category, event_outcome
 
 
+def _clean_sentinel(value: str | None) -> str | None:
+    """Treat '-' and empty strings as null and omit/clean them."""
+    if value is None:
+        return None
+    stripped = value.strip()
+    if stripped in ("-", ""):
+        return None
+    return stripped
+
+
 def normalize_syslog_cef(raw_data: dict[str, any]) -> NormalizedLog:
     """Normalize raw Syslog/CEF field dictionary into standard NormalizedLog."""
     timestamp = raw_data["timestamp"]
-    host_name = raw_data["host_name"]
+    host_name = _clean_sentinel(raw_data.get("host_name"))
     syslog_severity = raw_data["syslog_severity"]
     body = raw_data["body"]
 
@@ -94,12 +104,8 @@ def normalize_syslog_cef(raw_data: dict[str, any]) -> NormalizedLog:
         if cef_severity_string in CEF_SEVERITY_MAP:
             log_level = CEF_SEVERITY_MAP[cef_severity_string]
 
-        source_ip = extensions.get("src")
-        user_name = extensions.get("suser")
-        if user_name == "-":
-            user_name = None
-        if source_ip == "-":
-            source_ip = None
+        source_ip = _clean_sentinel(extensions.get("src"))
+        user_name = _clean_sentinel(extensions.get("suser"))
 
         message = extensions.get("msg") or cef_name or body
         action = extensions.get("act", "")
@@ -118,8 +124,8 @@ def normalize_syslog_cef(raw_data: dict[str, any]) -> NormalizedLog:
         event_category=event_category,
         event_outcome=event_outcome,
         log_level=log_level,
-        source_ip=source_ip,
-        user_name=user_name,
-        host_name=host_name,
-        message=message,
+        source_ip=_clean_sentinel(source_ip),
+        user_name=_clean_sentinel(user_name),
+        host_name=_clean_sentinel(host_name),
+        message=_clean_sentinel(message),
     )

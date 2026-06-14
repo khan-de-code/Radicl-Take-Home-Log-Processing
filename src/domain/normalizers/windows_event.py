@@ -1,5 +1,7 @@
 """Normalizer for Windows Event raw parsed outputs."""
 
+from datetime import UTC, datetime
+
 from domain.models import NormalizedLog
 
 EVENT_ID_AUTH_START = {4624, 4625, 4648}
@@ -8,6 +10,46 @@ EVENT_ID_PROCESS_START = 4688
 EVENT_ID_PROCESS_END = 4689
 EVENT_ID_HOST_INFO_MIN = 4720
 EVENT_ID_HOST_INFO_MAX = 4767
+
+
+def _clean_sentinel(value: str | None) -> str | None:
+    """Treat '-' and empty strings as null and omit/clean them."""
+    if value is None:
+        return None
+    stripped = value.strip()
+    if stripped in ("-", ""):
+        return None
+    return stripped
+
+
+def _parse_iso8601_to_utc(raw_timestamp: str) -> str:
+    """Parse any valid ISO 8601 timestamp and normalize it to UTC."""
+    try:
+        t_str = raw_timestamp.strip()
+        if "." in t_str:
+            dot_idx = t_str.index(".")
+            offset_idx = -1
+            for idx in range(dot_idx + 1, len(t_str)):
+                if t_str[idx] in ("+", "-", "Z"):
+                    offset_idx = idx
+                    break
+
+            if offset_idx != -1:
+                subseconds = t_str[dot_idx + 1 : offset_idx]
+                truncated_subseconds = subseconds[:6]
+                offset = t_str[offset_idx:]
+                t_str = t_str[:dot_idx] + "." + truncated_subseconds + offset
+
+        if t_str.endswith("Z"):
+            t_str = t_str[:-1] + "+00:00"
+
+        dt = datetime.fromisoformat(t_str)
+        dt_utc = dt.astimezone(UTC)
+
+        ms = dt_utc.microsecond // 1000
+        return f"{dt_utc.strftime('%Y-%m-%dT%H:%M:%S')}.{ms:03d}Z"
+    except (ValueError, TypeError):
+        return raw_timestamp
 
 
 def _map_json_event_metadata(event_id: int) -> tuple[str, str]:
@@ -60,14 +102,14 @@ def normalize_windows_event(data: dict[str, any]) -> NormalizedLog | None:
         return None
 
     # Standardize timestamp format to ISO 8601 UTC
-    if "." in raw_timestamp and raw_timestamp.endswith("Z"):
-        parts = raw_timestamp.split(".")
-        fraction = parts[1][:-1][:3]  # Take first 3 decimal digits
-        timestamp = f"{parts[0]}.{fraction}Z"
-    else:
-        timestamp = raw_timestamp
+    timestamp = _parse_iso8601_to_utc(raw_timestamp)
 
-    event_id = system.get("EventID", 0)
+    raw_event_id = system.get("EventID", 0)
+    try:
+        event_id = int(raw_event_id)
+    except (TypeError, ValueError):
+        event_id = 0
+
     event_type, event_category = _map_json_event_metadata(event_id)
 
     keywords = rendering_info.get("Keywords", [])
@@ -75,13 +117,9 @@ def normalize_windows_event(data: dict[str, any]) -> NormalizedLog | None:
 
     # Source IP: Prefer EventData.IpAddress, then OpenWEC.IpAddress
     source_ip = event_data.get("IpAddress") or open_wec.get("IpAddress")
-    if source_ip in ["-", ""]:
-        source_ip = None
 
     # User Name: Prefer TargetUserName, then SubjectUserName
     user_name = event_data.get("TargetUserName") or event_data.get("SubjectUserName")
-    if user_name in ["-", ""]:
-        user_name = None
 
     host_name = system.get("Computer")
 
@@ -96,7 +134,7 @@ def normalize_windows_event(data: dict[str, any]) -> NormalizedLog | None:
     elif "error" in level_lower or "critical" in level_lower:
         log_level = "error"
 
-    message = rendering_info.get("Message") or "Windows Event Log"
+    message = rendering_info.get("Message")
 
     return NormalizedLog(
         timestamp=timestamp,
@@ -104,8 +142,8 @@ def normalize_windows_event(data: dict[str, any]) -> NormalizedLog | None:
         event_category=event_category,
         event_outcome=event_outcome,
         log_level=log_level,
-        source_ip=source_ip,
-        user_name=user_name,
-        host_name=host_name,
-        message=message,
+        source_ip=_clean_sentinel(source_ip),
+        user_name=_clean_sentinel(user_name),
+        host_name=_clean_sentinel(host_name),
+        message=_clean_sentinel(message),
     )
