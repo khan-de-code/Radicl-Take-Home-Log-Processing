@@ -58,18 +58,18 @@ As an Operator, I want to configure the listening TCP port and the output destin
 
 **Why this priority**: Required for standard CLI/daemon interaction and ease of operations.
 
-**Independent Test**: Can be tested by running the daemon with `--port 6000` and sending a message to port 6000 to verify ingestion.
+**Independent Test**: Can be tested by running the daemon with `--port 6000` and `--output /tmp/output.log` and sending a message to port 6000 to verify ingestion.
 
 **Acceptance Scenarios**:
 
-1. **Given** the daemon is launched with argument `--port 6000`, **When** a connection is opened on port 6000, **Then** the server successfully listens and processes the input data.
+1. **Given** the daemon is launched with arguments `--port 6000` and `--output /tmp/output.log`, **When** a connection is opened on port 6000, **Then** the server successfully listens and processes the input data, writing the result to `/tmp/output.log`.
 
 ---
 
 ### Edge Cases
 
 - **Large Payload Flood**: What happens when a client sends a payload line larger than 64KB? (System must truncate the line, drop the connection, and log a warning).
-- **Missing Year in Syslog**: How does the parser handle RFC 3164 timestamps that do not include the year field? (System must assume the current UTC calendar year).
+- **Missing Year in Syslog**: How does the parser handle RFC 3164 timestamps that do not include the year field? (System must assume the current UTC calendar year. However, if this results in a future date > 7 days ahead of the system clock, the system must default to the previous calendar year).
 - **Empty and Sentinel values**: How does the system handle fields containing `-` or SIDs containing `S-1-0-0`? (System must omit these fields from output).
 - **Mixed Formats in Connection**: How does the server handle receiving a Syslog line followed by a JSON line on the same TCP connection? (Per-line format detection must handle each dynamically).
 
@@ -77,16 +77,16 @@ As an Operator, I want to configure the listening TCP port and the output destin
 
 ### Functional Requirements
 
-- **FR-001**: TCP server MUST listen on a configurable TCP port (default: 5044).
+- **FR-001**: TCP server MUST listen on a configurable TCP port (default: 5044) set via CLI parameter `--port`.
 - **FR-002**: System MUST automatically detect the format of each incoming log line (per-line basis: first non-whitespace character is `{` -> JSON/NDJSON, otherwise Syslog).
 - **FR-003**: System MUST parse both RFC 3164 Syslog messages (with PRI, timestamp, hostname, message body) and CEF extensions when present.
 - **FR-004**: System MUST parse nested JSON (Windows Event Logs) and extract fields from configured paths (`System`, `EventData`, `RenderingInfo`, `OpenWEC`).
 - **FR-005**: System MUST map all extracted fields to the normalized schema defined in `SCHEMA.md`.
-- **FR-006**: System MUST output normalized logs as NDJSON (single line per record) to stdout or a configurable output sink.
+- **FR-006**: System MUST output normalized logs as NDJSON (single line per record) to stdout or a configurable file destination set via `--output` (where `-` defaults to stdout).
 - **FR-007**: System MUST handle malformed input gracefully by logging/routing to a dead-letter target without crashing the server or terminating other connections.
 - **FR-008**: System MUST enforce a maximum payload size limit of 64KB per log line, disconnecting clients that exceed this limit.
 - **FR-009**: System MUST run parsing asynchronously, ensuring that CPU-heavy parsing operations or large payloads do not block the single-threaded event loop.
-- **FR-010**: System MUST support client-auth TLS configuration on the TCP listener if TLS parameters are supplied via the command line.
+- **FR-010**: System MUST support client-auth TLS configuration on the TCP listener if TLS parameters are supplied via the command line (optional feature; basic TCP is the mandatory MVP).
 - **FR-011**: System MUST support graceful shutdown upon receiving termination signals (`SIGINT`, `SIGTERM`), ensuring all active sockets are drained within a configurable grace period and resources/ports are released cleanly.
 - **FR-012**: System MUST enforce a maximum limit of concurrent TCP connections (default: 100) to prevent socket exhaustion.
 - **FR-013**: System MUST enforce a configurable connection read/write idle timeout (default: 30 seconds) on active socket channels.
@@ -100,7 +100,37 @@ As an Operator, I want to configure the listening TCP port and the output destin
 
 ### Measurable Outcomes
 
-- **SC-001**: The service parses both syslog and JSON sample inputs, producing outputs that are structurally and semantic-wise identical to `expected/sample-output.ndjson`.
+- **SC-001**: The service parses both syslog and JSON sample inputs, producing outputs that are structurally and semantic-wise identical to the expected records. For samples that are not present in `expected/sample-output.ndjson`, the target output mapping is:
+  * **sample-1.log**:
+    - `@timestamp`: `2026-12-05T10:30:45.000Z` (adjusted to `2025-12-05T10:30:45.000Z` if run in mid-2026 to prevent future date)
+    - `event.type`: `start` (EventID 4624 mapping takes precedence over `act=allow`)
+    - `event.category`: `authentication` (contains `"logged on"`)
+    - `event.outcome`: `success` (contains `"success"`)
+    - `source.ip`: `10.0.50.42`
+    - `user.name`: `jsmith`
+    - `host.name`: `192.168.1.1`
+    - `log.level`: `info` (syslog PRI 134 severity 6)
+    - `message`: `"An account was successfully logged on"` (from `msg=` field)
+  * **sample-2.log**:
+    - `@timestamp`: `2025-12-05T10:30:45.000Z` (adjusted to prevent future date)
+    - `event.type`: `start` (EventID 4625 equivalent)
+    - `event.category`: `authentication` (contains `"log on"`)
+    - `event.outcome`: `failure` (contains `"failed"`)
+    - `source.ip`: `10.0.50.42`
+    - `user.name`: `jsmith`
+    - `host.name`: `192.168.1.1`
+    - `log.level`: `info`
+    - `message`: `"An account failed to log on"`
+  * **sample-3.log**:
+    - `@timestamp`: `2025-12-05T10:30:45.000Z` (adjusted to prevent future date)
+    - `event.type`: `allowed` (derived from `act=allow` when no EventID is resolved)
+    - `event.category`: `network` (contains `"traffic"`)
+    - `event.outcome`: `success` (contains `"allow"`)
+    - `source.ip`: `10.0.50.42`
+    - `user.name`: `jsmith`
+    - `host.name`: `192.168.1.1`
+    - `log.level`: `info`
+    - `message`: `"Connection allowed"` (from `msg=` field)
 - **SC-002**: The service can process 5,000 log events per second under continuous load without memory leaks or runaway resource usage.
 - **SC-003**: A single malformed payload does not crash the service, and subsequent valid events are processed successfully within 50ms of connection recovery.
 - **SC-004**: Under concurrent load of 100 simultaneous TCP connections, parsing latency per log line remains under 5ms from packet receipt to output.
@@ -117,3 +147,7 @@ As an Operator, I want to configure the listening TCP port and the output destin
   * Syslog Severity 4 (Warning) / CEF 4-6 -> `warning`
   * Syslog Severity 5-6 (Notice, Informational) / CEF 1-3 -> `info`
   * Syslog Severity 7 (Debug) / CEF 0 -> `debug`
+- For `event.category`, the Syslog/CEF mapping check for `authentication` includes substrings `"log on"`, `"logged on"`, `"logon"`, `"login"`, and `"auth"`.
+- For `event.type` in Syslog/CEF, if a Device Event Class ID mapping exists (such as `4624` -> `start`), it takes precedence over generic `act=allow/deny` mappings.
+- For Syslog `message` mapping, the precedence order is: `msg=` key, then CEF Name header, then full syslog body.
+- SID (`S-1-0-0`) and `user.id` rules in `SCHEMA.md` are ignored as the target schema does not currently define a `user.id` field.
