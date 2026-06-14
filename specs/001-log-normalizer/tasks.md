@@ -33,8 +33,8 @@
 
 - [X] T007 Configure structured log formatter outputting to stderr in src/domain/utils.py
 - [X] T008 [P] Create initial Pydantic schema validation structures in src/domain/models.py
-- [ ] T009 [P] Define core Ports for ingestion and outputs in src/domain/ports.py
-- [ ] T010 Implement basic asyncio TCP server bootstrap and shutdown loop in src/adapters/inbound/tcp_server.py and src/main.py
+- [X] T009 [P] Define core Ports for ingestion and outputs in src/domain/ports.py
+- [X] T010 Implement basic asyncio TCP server bootstrap and shutdown loop in src/adapters/inbound/tcp_server.py and src/main.py
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
